@@ -1,0 +1,118 @@
+//Podemos mudar LOOKAHEAD dinamicamente (p.exemplo para int vs int[])
+options 
+{
+    LOOKAHEAD = 1;
+}
+
+PARSER_BEGIN(JavaMM)
+    public class JavaMM
+    {
+        public static main(String[] args) throws ParserException
+        {
+            JavaMM = new JavaMM(System.in);
+
+
+            
+        }
+    }
+
+PARSER_END(JavaMM)
+
+SKIP :
+{
+    " " | "\r" | "\t"
+}
+
+// Ver palavras reservadas
+TOKEN:
+{
+    <INTEGER: (["0"-"9"])+>
+    | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+    | <INT: ("int")>
+    | <BOOL: ("boolean")>
+    | <RETURN: ("return")>
+    | <PUBLIC: ("public")>
+    | <TRUE: ("true")>
+    | <FALSE: ("false")>
+    | <THIS: ("this")>
+    | <NEW: ("new")>
+    | <IF: ("if")>
+    | <WHILE: ("while")>
+}
+
+// É preciso EOF ou não?
+SimpleNode Program(): {}
+{
+    ClassDeclaration() <EOF> {return jjtThis;}
+}
+
+void ClassDeclaration(): {}
+{
+    "class" <IDENTIFIER> ["extends" <IDENTIFIER>] 
+    "{" (VarDeclaration())* (MainDeclaration() | MethodDeclaration())* "}" ";"
+}
+
+void VarDeclaration(): {}
+{
+    Type() <IDENTIFIER> ";"   
+}
+
+void MainDeclaration(): {}
+{
+    "public" "static" "void" "main" "(" "String" "[" "]" <IDENTIFIER> ")" 
+    "{" (VarDeclaration())* (Statement())* "}" ";"   
+}
+
+// Como certificar que o tipo do return é o mesmo que o "return em si"?
+void MethodDeclaration(): {}
+{
+    "public" Type() Method() "return" Expression() ";" "}" 
+}
+
+void MethodDeclarationVoid(): {}
+{
+    "public" "void" Method()  ["return" ";"] "}"
+} 
+
+void Method(): {}
+{
+    <IDENTIFIER> "(" [Type() <IDENTIFIER> ("," Type() <IDENTIFIER>)*] ")"
+    "{" (VarDeclaration())* (Statement())*
+}
+
+void Type(): {}
+{
+    "int[]"
+    | <BOOL>
+    | <INT>
+    | <IDENTIFIER>
+}
+
+void Statement(): {}
+{
+    "{" (Statement())* "}"
+    | <IF> "(" Expression() ")" Statement()
+    | <WHILE> "(" Expression() ")" Statement()
+    | Expression() ";"
+    | <IDENTIFIER> "=" Expression() ";"
+    | <IDENTIFIER> "[" Expression() "]" "=" Expression() ";"
+}
+
+// Ver como distinguir boolean expressions de arithmetic
+// Ver integer literal
+void Expression(): {}
+{
+    Expression() ("&&" | "<" | ">" | "+" | "-" | "*" |"/" | ">=" | "<=")* Expression()
+    | Expression() "[" "]" Expression()
+    | Expression() "." "length"
+    | Expression() "." <IDENTIFIER> "(" [Expression() ("," Expression())*] ")"
+    | <TRUE>
+    | <FALSE>
+    | <IDENTIFIER>
+    | <THIS>
+    | <INTEGER>
+    | <NEW> <INT> "[" Expression() "]"
+    | <NEW> <IDENTIFIER> "(" ")" //E classes com argumentos no construtor?
+    | "!" Expression()
+    | "(" Expression() ")"
+}
