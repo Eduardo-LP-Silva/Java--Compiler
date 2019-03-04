@@ -9,9 +9,17 @@ PARSER_BEGIN(JavaMM)
     {
         public static main(String[] args) throws ParserException
         {
-            JavaMM = new JavaMM(System.in);
+            if(args.length < 1)
+            {
+                System.out.println("Usage: JavaMM <filename>");
+                System.exit(1);
+            }
 
+            JavaMM parser = new JavaMM(new FileInputStream(args[0]));
+            SimpleNode root = parser.Program();
 
+            System.out.println("-----AST-----");
+            root.dump(" ");
             
         }
     }
@@ -27,62 +35,81 @@ SKIP :
 TOKEN:
 {
     <INTEGER: (["0"-"9"])+>
+    | <BOOL: "boolean">
+    | <VOID: "void">
+    | <STRING: "string">
     | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
     | <INT: ("int")>
-    | <BOOL: ("boolean")>
-    | <RETURN: ("return")>
-    | <PUBLIC: ("public")>
-    | <TRUE: ("true")>
-    | <FALSE: ("false")>
-    | <THIS: ("this")>
-    | <NEW: ("new")>
-    | <IF: ("if")>
-    | <WHILE: ("while")>
+    | <LPAREN: "(">
+    | <RPAREN: ")">
+    | <LBRACK: "[">
+    | <RBRACK: "]">
+    | <LBRACE: "{">
+    | <RBRACE: "}">
+    | <ADD: "+">
+    | <SUB: "-">
+    | <MUL: "*">
+    | <DIV: "/">
+    | <NOT: "!">
+    | <EQUAL: "=">
+    | <LOWER: "<">
+    | <BIGGER: ">">
+    | <AND: "&&">
+    | <SEMI: ";">
+    | <COMMA: ",">
+    | <DOT: ".">
+    | <RETURN: "return">
+    | <PUBLIC: "public">
+    | <STAT: "static">
+    | <TRUE: "true">
+    | <FALSE: "false">
+    | <THIS: "this">
+    | <NEW: "new">
+    | <IF: "if">
+    | <WHILE: "while">
+    | <CLASS: "class">
+    | <EXT: "extends">
 }
 
-// É preciso EOF ou não?
-SimpleNode Program(): {}
+SimpleNode Program() #void: {} 
 {
     ClassDeclaration() <EOF> {return jjtThis;}
 }
 
-void ClassDeclaration(): {}
+void ClassDeclaration() #class: {}
 {
-    "class" <IDENTIFIER> ["extends" <IDENTIFIER>] 
-    "{" (VarDeclaration())* (MainDeclaration() | MethodDeclaration())* "}" ";"
+    <CLASS> <IDENTIFIER> [<EXT> <IDENTIFIER>] 
+    <LBRACE> (VarDeclaration())* (MainDeclaration() | MethodDeclaration())* <RBRACE> <SEMI>
 }
 
-void VarDeclaration(): {}
+void VarDeclaration() #var: {}
 {
-    Type() <IDENTIFIER> ";"   
+    Type() <IDENTIFIER> <SEMI>  
 }
 
-void MainDeclaration(): {}
+void MainDeclaration() #main: {}
 {
-    "public" "static" "void" "main" "(" "String" "[" "]" <IDENTIFIER> ")" 
-    "{" (VarDeclaration())* (Statement())* "}" ";"   
+    <PUBLIC> <STAT> <VOID> "main" <LPAREN> <STRING> <LBRACK> <RBRACK> <IDENTIFIER> <RPAREN> 
+    <LBRACE> (VarDeclaration())* (Statement())* <RBRACE> <SEMI>   
 }
 
-// Como certificar que o tipo do return é o mesmo que o "return em si"?
-void MethodDeclaration(): {}
+// Como certificar que o tipo do return é o mesmo que o "return em si"? Prolly so em analise semantica
+void MethodDeclaration() #method: {}
 {
-    "public" Type() Method() "return" Expression() ";" "}" 
+    <PUBLIC> (Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
+    | <VOID> Method() [<RETURN> <SEMI>] <RBRACE>)
+    
 }
-
-void MethodDeclarationVoid(): {}
-{
-    "public" "void" Method()  ["return" ";"] "}"
-} 
 
 void Method(): {}
 {
-    <IDENTIFIER> "(" [Type() <IDENTIFIER> ("," Type() <IDENTIFIER>)*] ")"
-    "{" (VarDeclaration())* (Statement())*
+    <IDENTIFIER> <LPAREN> [Type() <IDENTIFIER> (<COMMA> Type() <IDENTIFIER>)*] <RPAREN>
+    <LBRACE> (VarDeclaration())* (Statement())*
 }
 
 void Type(): {}
 {
-    "int[]"
+    <INT> <LBRACK> <RBRACK>
     | <BOOL>
     | <INT>
     | <IDENTIFIER>
@@ -90,29 +117,28 @@ void Type(): {}
 
 void Statement(): {}
 {
-    "{" (Statement())* "}"
-    | <IF> "(" Expression() ")" Statement()
-    | <WHILE> "(" Expression() ")" Statement()
-    | Expression() ";"
-    | <IDENTIFIER> "=" Expression() ";"
-    | <IDENTIFIER> "[" Expression() "]" "=" Expression() ";"
+    <LBRACE> (Statement())* <RBRACE>
+    | <IF> <LPAREN> Expression() <RPAREN> Statement()
+    | <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+    | Expression() <SEMI>
+    | <IDENTIFIER> <EQUAL> Expression() <SEMI>
+    | <IDENTIFIER> <LBRACK> Expression() <RBRACK> <EQUAL> Expression() <SEMI>   
 }
 
 // Ver como distinguir boolean expressions de arithmetic
-// Ver integer literal
 void Expression(): {}
 {
-    Expression() ("&&" | "<" | ">" | "+" | "-" | "*" |"/" | ">=" | "<=")* Expression()
-    | Expression() "[" "]" Expression()
-    | Expression() "." "length"
-    | Expression() "." <IDENTIFIER> "(" [Expression() ("," Expression())*] ")"
+    Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()
+    | Expression() <LBRACK> <RBRACK> Expression()
+    | Expression() <DOT> "length"
+    | Expression() <DOT> <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>
     | <TRUE>
     | <FALSE>
     | <IDENTIFIER>
     | <THIS>
     | <INTEGER>
-    | <NEW> <INT> "[" Expression() "]"
-    | <NEW> <IDENTIFIER> "(" ")" //E classes com argumentos no construtor?
-    | "!" Expression()
-    | "(" Expression() ")"
+    | <NEW> <INT> <LBRACK> Expression() <RBRACK>
+    | <NEW> <IDENTIFIER> <LPAREN> <RPAREN> //E classes com argumentos no construtor?
+    | <NOT> Expression()
+    | <LPAREN> Expression() <RPAREN>
 }
