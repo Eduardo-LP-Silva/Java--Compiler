@@ -115,20 +115,31 @@ void Type(): {}
     | <IDENTIFIER>
 }
 
-void Statement(): {}
+void Statement() #void: {}
 {
     <LBRACE> (Statement())* <RBRACE>
-    | <IF> <LPAREN> Expression() <RPAREN> Statement()
-    | <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+    | While()
+    | If()
     | Expression() <SEMI>
     | <IDENTIFIER> <EQUAL> Expression() <SEMI>
     | <IDENTIFIER> <LBRACK> Expression() <RBRACK> <EQUAL> Expression() <SEMI>   
+}
+
+void While(): {}
+{
+    <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+void If(): {}
+{
+    <IF> <LPAREN> Expression() <RPAREN> Statement()
 }
 
 // Ver como distinguir boolean expressions de arithmetic
 void Expression(): {}
 {
     Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()
+    /*
     | Expression() <LBRACK> <RBRACK> Expression()
     | Expression() <DOT> "length"
     | Expression() <DOT> <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>
@@ -140,5 +151,5 @@ void Expression(): {}
     | <NEW> <INT> <LBRACK> Expression() <RBRACK>
     | <NEW> <IDENTIFIER> <LPAREN> <RPAREN> //E classes com argumentos no construtor?
     | <NOT> Expression()
-    | <LPAREN> Expression() <RPAREN>
+    | <LPAREN> Expression() <RPAREN> */
 }
