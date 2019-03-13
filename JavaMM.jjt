@@ -7,7 +7,7 @@ options
 PARSER_BEGIN(JavaMM)
     public class JavaMM
     {
-        public static main(String[] args) throws ParserException
+        public static void main(String[] args) throws ParserException
         {
             if(args.length < 1)
             {
@@ -34,11 +34,11 @@ SKIP :
 // Ver palavras reservadas
 TOKEN:
 {
-    <INTEGER: (["0"-"9"])+>
-    | <BOOL: "boolean">
+    
+    <BOOL: "boolean">
+    | <MAIN: "main">
     | <VOID: "void">
     | <STRING: "string">
-    | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
     | <INT: ("int")>
     | <LPAREN: "(">
     | <RPAREN: ")">
@@ -69,6 +69,8 @@ TOKEN:
     | <WHILE: "while">
     | <CLASS: "class">
     | <EXT: "extends">
+    | <INTEGER: (["0"-"9"])+>
+    | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
 }
 
 SimpleNode Program() #void: {} 
@@ -76,10 +78,10 @@ SimpleNode Program() #void: {}
     ClassDeclaration() <EOF> {return jjtThis;}
 }
 
-void ClassDeclaration() #class: {}
+void ClassDeclaration() #class_declaration: {}
 {
     <CLASS> <IDENTIFIER> [<EXT> <IDENTIFIER>] 
-    <LBRACE> (VarDeclaration())* (MainDeclaration() | MethodDeclaration())* <RBRACE> <SEMI>
+    <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE> <SEMI>
 }
 
 void VarDeclaration() #var: {}
@@ -89,14 +91,14 @@ void VarDeclaration() #var: {}
 
 void MainDeclaration() #main: {}
 {
-    <PUBLIC> <STAT> <VOID> "main" <LPAREN> <STRING> <LBRACK> <RBRACK> <IDENTIFIER> <RPAREN> 
-    <LBRACE> (VarDeclaration())* (Statement())* <RBRACE> <SEMI>   
+    <STAT> <VOID> <MAIN> <LPAREN> <STRING> <LBRACK> <RBRACK> <IDENTIFIER> <RPAREN> 
+    <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE> <SEMI>   
 }
 
 // Como certificar que o tipo do return é o mesmo que o "return em si"? Prolly so em analise semantica
 void MethodDeclaration() #method: {}
 {
-    <PUBLIC> (Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
+    (Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
     | <VOID> Method() [<RETURN> <SEMI>] <RBRACE>)
     
 }
@@ -104,14 +106,13 @@ void MethodDeclaration() #method: {}
 void Method(): {}
 {
     <IDENTIFIER> <LPAREN> [Type() <IDENTIFIER> (<COMMA> Type() <IDENTIFIER>)*] <RPAREN>
-    <LBRACE> (VarDeclaration())* (Statement())*
+    <LBRACE> (LOOKAHEAD(2) VarDeclaration())* (Statement())*
 }
 
 void Type(): {}
 {
-    <INT> <LBRACK> <RBRACK>
+    <INT> [<LBRACK> <RBRACK>]
     | <BOOL>
-    | <INT>
     | <IDENTIFIER>
 }
 
@@ -121,8 +122,7 @@ void Statement() #void: {}
     | While()
     | If()
     | Expression() <SEMI>
-    | <IDENTIFIER> <EQUAL> Expression() <SEMI>
-    | <IDENTIFIER> <LBRACK> Expression() <RBRACK> <EQUAL> Expression() <SEMI>   
+    | <IDENTIFIER> (<EQUAL> Expression() <SEMI> | <LBRACK> Expression() <RBRACK> <EQUAL> Expression() <SEMI>)   
 }
 
 void While(): {}
@@ -138,8 +138,9 @@ void If(): {}
 // Ver como distinguir boolean expressions de arithmetic
 void Expression(): {}
 {
-    Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()
+    <TRUE>
     /*
+    Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()   
     | Expression() <LBRACK> <RBRACK> Expression()
     | Expression() <DOT> "length"
     | Expression() <DOT> <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>
