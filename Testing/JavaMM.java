@@ -203,7 +203,7 @@ if (jjtc000) {
     }
   }
 
-// Como certificar que o tipo do return é o mesmo que o "return em si"? Prolly so em analise semantica
+// Como certificar que o tipo do return Ã© o mesmo que o "return em si"? Prolly so em analise semantica
   static final public void MethodDeclaration() throws ParseException {/*@bgen(jjtree) method */
   SimpleNode jjtn000 = new SimpleNode(JJTMETHOD);
   boolean jjtc000 = true;

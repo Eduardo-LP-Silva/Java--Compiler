@@ -28,8 +28,13 @@ PARSER_END(JavaMM)
 
 SKIP :
 {
-    " " | "\r" | "\t"
+    " " | "\r" | "\t" | "\n"
+    |  <"rem" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
 }
+
+
+
+
 
 // Ver palavras reservadas
 TOKEN:
@@ -66,12 +71,25 @@ TOKEN:
     | <THIS: "this">
     | <NEW: "new">
     | <IF: "if">
+    | <ELSE: "else">
     | <WHILE: "while">
     | <CLASS: "class">
     | <EXT: "extends">
-    | <INTEGER: (["0"-"9"])+>
-    | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+    //| <INTEGER: (["0"-"9"])+>
+    //| <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
 }
+
+/* Numeros e identificadores */
+TOKEN : {
+    < NUM : (<INTEGER>)+ >
+    | < #INTEGER : ["0" - "9"] >
+    | < IDENTIFIER : (<LETTER>)+ >
+    | < #LETTER : ["a" - "z", "A" - "Z"]+>
+    
+}
+
+
+
 
 SimpleNode Program() #void: {} 
 {
@@ -133,6 +151,11 @@ void While(): {}
 void If(): {}
 {
     <IF> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+void ELSE(): {}
+{
+    <ELSE> Statement()
 }
 
 // Ver como distinguir boolean expressions de arithmetic
