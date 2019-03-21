@@ -1,7 +1,24 @@
 class exemplo
 {
-    public static void main(String args[])
+    int varEx;
+    boolean boolEx;
+
+    public static void main(String[] args)
     {
-        int a;
+
+    }
+
+    public int ex(int param1)
+    {
+        while(true)
+        {
+            if(true)
+            {
+                
+            }
+        }
+
+
+        return 1;
     }
 }

@@ -5,9 +5,12 @@ options
 }
 
 PARSER_BEGIN(JavaMM)
+
+    import java.io.FileInputStream;
+
     public class JavaMM
     {
-        public static void main(String[] args) throws ParserException
+        public static void main(String[] args) throws Exception
         {
             if(args.length < 1)
             {
@@ -28,8 +31,12 @@ PARSER_END(JavaMM)
 
 SKIP :
 {
-    " " | "\r" | "\t" | "\n"
-    |  <"rem" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+    " " 
+    | "\r" 
+    | "\t"
+    | "\n"
+    | <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+    | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
 
@@ -43,7 +50,7 @@ TOKEN:
     <BOOL: "boolean">
     | <MAIN: "main">
     | <VOID: "void">
-    | <STRING: "string">
+    | <STRING: "String">
     | <INT: ("int")>
     | <LPAREN: "(">
     | <RPAREN: ")">
@@ -75,23 +82,13 @@ TOKEN:
     | <WHILE: "while">
     | <CLASS: "class">
     | <EXT: "extends">
-    //| <INTEGER: (["0"-"9"])+>
-    //| <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+    | <INTEGER: (<DIGIT>)+>
+    | <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
+    | <LETTER: ["$", "a"-"z", "A"-"Z", "_"]>
+    | <DIGIT: ["0"-"9"]>
 }
 
-/* Numeros e identificadores */
-TOKEN : {
-    < NUM : (<INTEGER>)+ >
-    | < #INTEGER : ["0" - "9"] >
-    | < IDENTIFIER : (<LETTER>)+ >
-    | < #LETTER : ["a" - "z", "A" - "Z"]+>
-    
-}
-
-
-
-
-SimpleNode Program() #void: {} 
+SimpleNode Program(): {} 
 {
     ClassDeclaration() <EOF> {return jjtThis;}
 }
@@ -99,7 +96,7 @@ SimpleNode Program() #void: {}
 void ClassDeclaration() #class_declaration: {}
 {
     <CLASS> <IDENTIFIER> [<EXT> <IDENTIFIER>] 
-    <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE> <SEMI>
+    <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE>
 }
 
 void VarDeclaration() #var: {}
@@ -110,15 +107,13 @@ void VarDeclaration() #var: {}
 void MainDeclaration() #main: {}
 {
     <STAT> <VOID> <MAIN> <LPAREN> <STRING> <LBRACK> <RBRACK> <IDENTIFIER> <RPAREN> 
-    <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE> <SEMI>   
+    <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>  
 }
 
 // Como certificar que o tipo do return é o mesmo que o "return em si"? Prolly so em analise semantica
-void MethodDeclaration() #method: {}
+void MethodDeclaration(): {}
 {
-    (Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
-    | <VOID> Method() [<RETURN> <SEMI>] <RBRACE>)
-    
+    Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
 }
 
 void Method(): {}
@@ -145,12 +140,12 @@ void Statement() #void: {}
 
 void While(): {}
 {
-    <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+    <WHILE> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement()
 }
 
 void If(): {}
 {
-    <IF> <LPAREN> Expression() <RPAREN> Statement()
+    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement()
 }
 
 void ELSE(): {}
@@ -162,6 +157,7 @@ void ELSE(): {}
 void Expression(): {}
 {
     <TRUE>
+    | <INTEGER>
     /*
     Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()   
     | Expression() <LBRACK> <RBRACK> Expression()
@@ -176,4 +172,40 @@ void Expression(): {}
     | <NEW> <IDENTIFIER> <LPAREN> <RPAREN> //E classes com argumentos no construtor?
     | <NOT> Expression()
     | <LPAREN> Expression() <RPAREN> */
+}
+
+void BOOLEAN_EXPR(): {}
+{
+    BOOL_EXPR() [<AND> BOOLEAN_EXPR()]
+    | <TRUE>
+    | <FALSE>
+}
+
+void BOOL_EXPR(): {}
+{
+    ARIT_EXPR() <LOWER> ARIT_EXPR()
+}
+
+void ARIT_EXPR(): {}
+{
+    ARIT_EXPR_2(1)
+    [
+        (<ADD> ARIT_EXPR_2(1) | <SUB> ARIT_EXPR_2(1))
+    ]
+}
+
+void ARIT_EXPR_2(int sign): {}
+{
+    ARIT_EXPR_3(sign)
+    [
+        (<MUL> ARIT_EXPR_3(sign) | <DIV> ARIT_EXPR_3(sign))
+    ]
+}
+
+void ARIT_EXPR_3(int sign): {}
+{
+    <INTEGER>
+    | <SUB> ARIT_EXPR_3(-1)
+    | <LPAREN> ARIT_EXPR() <RPAREN>
+    | <IDENTIFIER>
 }
