@@ -39,11 +39,6 @@ SKIP :
     | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
-
-
-
-
-// Ver palavras reservadas
 TOKEN:
 {
     
@@ -145,10 +140,10 @@ void While(): {}
 
 void If(): {}
 {
-    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement()
+    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement() [Else()]
 }
 
-void ELSE(): {}
+void Else(): {}
 {
     <ELSE> Statement()
 }

@@ -39,7 +39,6 @@ SKIP :
     | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
-// Ver palavras reservadas
 TOKEN:
 {
     
@@ -74,6 +73,7 @@ TOKEN:
     | <THIS: "this">
     | <NEW: "new">
     | <IF: "if">
+    | <ELSE: "else">
     | <WHILE: "while">
     | <CLASS: "class">
     | <EXT: "extends">
@@ -140,7 +140,12 @@ void While(): {}
 
 void If(): {}
 {
-    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement()
+    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement() [Else()]
+}
+
+void Else(): {}
+{
+    <ELSE> Statement()
 }
 
 // Ver como distinguir boolean expressions de arithmetic
