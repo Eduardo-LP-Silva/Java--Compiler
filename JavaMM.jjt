@@ -77,6 +77,7 @@ TOKEN:
     | <WHILE: "while">
     | <CLASS: "class">
     | <EXT: "extends">
+    | <LENGTH: "length">
     | <INTEGER: (<DIGIT>)+>
     | <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
     | <LETTER: ["$", "a"-"z", "A"-"Z", "_"]>
@@ -88,7 +89,7 @@ SimpleNode Program(): {}
     ClassDeclaration() <EOF> {return jjtThis;}
 }
 
-void ClassDeclaration() #class_declaration: {}
+void ClassDeclaration() #Class: {}
 {
     <CLASS> <IDENTIFIER> [<EXT> <IDENTIFIER>] 
     <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE>
@@ -105,19 +106,18 @@ void MainDeclaration() #main: {}
     <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>  
 }
 
-// Como certificar que o tipo do return é o mesmo que o "return em si"? Prolly so em analise semantica
-void MethodDeclaration(): {}
+void MethodDeclaration() #method: {}
 {
     Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
 }
 
-void Method(): {}
+void Method() #void: {}
 {
     <IDENTIFIER> <LPAREN> [Type() <IDENTIFIER> (<COMMA> Type() <IDENTIFIER>)*] <RPAREN>
-    <LBRACE> (LOOKAHEAD(2) VarDeclaration())* (Statement())*
+    <LBRACE> (LOOKAHEAD(2) VarDeclaration() | Statement())*
 }
 
-void Type(): {}
+void Type() #void: {}
 {
     <INT> [<LBRACK> <RBRACK>]
     | <BOOL>
@@ -130,7 +130,6 @@ void Statement() #void: {}
     | While()
     | If()
     | Expression() <SEMI>
-    | <IDENTIFIER> (<EQUAL> Expression() <SEMI> | <LBRACK> Expression() <RBRACK> <EQUAL> Expression() <SEMI>)   
 }
 
 void While(): {}
@@ -140,7 +139,7 @@ void While(): {}
 
 void If(): {}
 {
-    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement() [Else()]
+    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement() Else()
 }
 
 void Else(): {}
@@ -148,11 +147,19 @@ void Else(): {}
     <ELSE> Statement()
 }
 
+void Member(): {}
+{
+    <DOT> (<LENGTH> | <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
+}
+
 // Ver como distinguir boolean expressions de arithmetic
 void Expression(): {}
 {
     <TRUE>
     | <INTEGER>
+    | <THIS> (Member() | <EQUAL> Expression())
+    | <IDENTIFIER> [<LBRACK> Expression() <RBRACK>] (Member() | <EQUAL> Expression())
+    | <NEW> (<IDENTIFIER> <LPAREN> <RPAREN> | <INT> <LBRACK> Expression() <RBRACK>)
     /*
     Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()   
     | Expression() <LBRACK> <RBRACK> Expression()
@@ -169,16 +176,18 @@ void Expression(): {}
     | <LPAREN> Expression() <RPAREN> */
 }
 
+
+
 void BOOLEAN_EXPR(): {}
 {
-    BOOL_EXPR() [<AND> BOOLEAN_EXPR()]
+    [<NOT>] BOOL_EXPR() [<AND> BOOLEAN_EXPR()] //Faltam ()
     | <TRUE>
     | <FALSE>
 }
 
 void BOOL_EXPR(): {}
 {
-    ARIT_EXPR() <LOWER> ARIT_EXPR()
+    ARIT_EXPR() (<LOWER> | <NOT> <EQUAL>) ARIT_EXPR()
 }
 
 void ARIT_EXPR(): {}
