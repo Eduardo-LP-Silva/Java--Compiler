@@ -8,11 +8,11 @@ class exemplo
 
     }
 
-    public int ex(int param1)
+    public int ex(int param1, int param2)
     {
         while(true)
         {
-            if(true)
+            if(i + 1)
             {
                 
             }

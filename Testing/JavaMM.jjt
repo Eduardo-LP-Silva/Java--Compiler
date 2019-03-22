@@ -78,6 +78,10 @@ TOKEN:
     | <CLASS: "class">
     | <EXT: "extends">
     | <LENGTH: "length">
+    | <LITERAL: (<INTEGER> | <BINARY> | <HEX> | <OCTAL>)>
+    | <OCTAL: "0"(["0"-"7"])+>
+    | <HEX: "0x"(["0"-"9", "A"-"F"])+>
+    | <BINARY: "0b"(["0"-"1"])+>
     | <INTEGER: (<DIGIT>)+>
     | <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
     | <LETTER: ["$", "a"-"z", "A"-"Z", "_"]>
@@ -89,39 +93,44 @@ SimpleNode Program(): {}
     ClassDeclaration() <EOF> {return jjtThis;}
 }
 
-void ClassDeclaration() #Class: {}
+void ClassDeclaration() #Class: {Token n;}
 {
-    <CLASS> <IDENTIFIER> [<EXT> <IDENTIFIER>] 
+    <CLASS>  n=<IDENTIFIER> {jjtThis.name = n.image;} [<EXT> <IDENTIFIER>] 
     <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE>
 }
 
-void VarDeclaration() #var: {}
+void VarDeclaration() #Var: {Token n; String t;}
 {
-    Type() <IDENTIFIER> <SEMI>  
+    t=Type() {jjtThis.type = t;} n=<IDENTIFIER> {jjtThis.name = n.image;} <SEMI>  
 }
 
-void MainDeclaration() #main: {}
+void MainDeclaration() #Main: {}
 {
     <STAT> <VOID> <MAIN> <LPAREN> <STRING> <LBRACK> <RBRACK> <IDENTIFIER> <RPAREN> 
     <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>  
 }
 
-void MethodDeclaration() #method: {}
+void MethodDeclaration() #void: {}
 {
     Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
 }
 
-void Method() #void: {}
+void Method(): {Token n;}
 {
-    <IDENTIFIER> <LPAREN> [Type() <IDENTIFIER> (<COMMA> Type() <IDENTIFIER>)*] <RPAREN>
-    <LBRACE> (LOOKAHEAD(2) VarDeclaration() | Statement())*
+    n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Arg() 
+    (<COMMA> Arg())*] <RPAREN> <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())*
 }
 
-void Type() #void: {}
+void Arg(): {Token n; String t;}
 {
-    <INT> [<LBRACK> <RBRACK>]
-    | <BOOL>
-    | <IDENTIFIER>
+    t=Type() {jjtThis.type = t;} n=<IDENTIFIER> {jjtThis.name = n.image;}
+}
+
+String Type() #void: {Token t, t1;}
+{
+    t=<INT> [<LBRACK> t1=<RBRACK> {return "int[]";}] {return t.image;}
+    | t=<BOOL> {return t.image;}
+    | t=<IDENTIFIER> {return t.image;}
 }
 
 void Statement() #void: {}
@@ -129,17 +138,23 @@ void Statement() #void: {}
     <LBRACE> (Statement())* <RBRACE>
     | While()
     | If()
-    | Expression() <SEMI>
+    | Stmt()
+}
+
+void Stmt(): {Token n, o;}
+{
+    [LOOKAHEAD(2) n=<IDENTIFIER> {jjtThis.name = n.image;} [<LBRACK> Expression() <RBRACK>] 
+    o=<EQUAL> {jjtThis.operator = o.image;}] Expression() <SEMI>
 }
 
 void While(): {}
 {
-    <WHILE> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement()
+    <WHILE> <LPAREN> Expression() <RPAREN> Statement()
 }
 
 void If(): {}
 {
-    <IF> <LPAREN> BOOLEAN_EXPR() <RPAREN> Statement() Else()
+    <IF> <LPAREN> Expression() <RPAREN> Statement() Else()
 }
 
 void Else(): {}
@@ -147,19 +162,18 @@ void Else(): {}
     <ELSE> Statement()
 }
 
-void Member(): {}
+void Member(): {Token n;}
 {
-    <DOT> (<LENGTH> | <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
+    <DOT> (n=<LENGTH> {jjtThis.name = n.image;} | 
+    n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
 }
 
 // Ver como distinguir boolean expressions de arithmetic
 void Expression(): {}
 {
-    <TRUE>
-    | <INTEGER>
-    | <THIS> (Member() | <EQUAL> Expression())
-    | <IDENTIFIER> [<LBRACK> Expression() <RBRACK>] (Member() | <EQUAL> Expression())
+    EXPR() [<LBRACK> EXPR() <RBRACK> | Member()]
     | <NEW> (<IDENTIFIER> <LPAREN> <RPAREN> | <INT> <LBRACK> Expression() <RBRACK>)
+    | <NOT> EXPR()
     /*
     Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()   
     | Expression() <LBRACK> <RBRACK> Expression()
@@ -176,8 +190,7 @@ void Expression(): {}
     | <LPAREN> Expression() <RPAREN> */
 }
 
-
-
+/*
 void BOOLEAN_EXPR(): {}
 {
     [<NOT>] BOOL_EXPR() [<AND> BOOLEAN_EXPR()] //Faltam ()
@@ -188,28 +201,32 @@ void BOOLEAN_EXPR(): {}
 void BOOL_EXPR(): {}
 {
     ARIT_EXPR() (<LOWER> | <NOT> <EQUAL>) ARIT_EXPR()
-}
+    | <LPAREN> BOOLEAN_EXPR() <RPAREN>
+} */
 
-void ARIT_EXPR(): {}
+
+void EXPR(): {}
 {
-    ARIT_EXPR_2(1)
+    EXPR_2(1)
     [
-        (<ADD> ARIT_EXPR_2(1) | <SUB> ARIT_EXPR_2(1))
+        (<ADD> | <SUB> | <LOWER>) EXPR_2(1)
     ]
 }
 
-void ARIT_EXPR_2(int sign): {}
+void EXPR_2(int sign): {}
 {
-    ARIT_EXPR_3(sign)
+    EXPR_3(sign)
     [
-        (<MUL> ARIT_EXPR_3(sign) | <DIV> ARIT_EXPR_3(sign))
+        (<MUL> | <DIV> | <AND>) EXPR_3(sign)
     ]
-}
+} 
 
-void ARIT_EXPR_3(int sign): {}
+void EXPR_3(int sign): {}
 {
-    <INTEGER>
-    | <SUB> ARIT_EXPR_3(-1)
-    | <LPAREN> ARIT_EXPR() <RPAREN>
+    <LITERAL>
+    | <THIS>
+    | <TRUE>
+    | <FALSE>
+    | <SUB> EXPR_3(-1)
     | <IDENTIFIER>
 }
