@@ -220,5 +220,5 @@ void EXPR_5() #TERM: {Token t; Boolean b = false;}
     | t=<TRUE> {jjtThis.name = t.image;}
     | t=<FALSE> {jjtThis.name = t.image;}
     | t=<IDENTIFIER> {jjtThis.name = t.image;}
-    | <LPAREN> EXPR() <RPAREN> #ENCLOSED_EXPR
+    | <LPAREN> EXPR() #ENCLOSED_EXPR <RPAREN> 
 }

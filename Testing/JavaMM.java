@@ -1144,17 +1144,31 @@ jjtn000.name = t.image;
         }
       case LPAREN:{
         jj_consume_token(LPAREN);
-        EXPR();
 SimpleNode jjtn001 = new SimpleNode(JJTENCLOSED_EXPR);
-                        boolean jjtc001 = true;
-                        jjtree.openNodeScope(jjtn001);
+                 boolean jjtc001 = true;
+                 jjtree.openNodeScope(jjtn001);
         try {
-          jj_consume_token(RPAREN);
+          EXPR();
+        } catch (Throwable jjte001) {
+if (jjtc001) {
+                   jjtree.clearNodeScope(jjtn001);
+                   jjtc001 = false;
+                 } else {
+                   jjtree.popNode();
+                 }
+                 if (jjte001 instanceof RuntimeException) {
+                   {if (true) throw (RuntimeException)jjte001;}
+                 }
+                 if (jjte001 instanceof ParseException) {
+                   {if (true) throw (ParseException)jjte001;}
+                 }
+                 {if (true) throw (Error)jjte001;}
         } finally {
 if (jjtc001) {
-                          jjtree.closeNodeScope(jjtn001, true);
-                        }
+                   jjtree.closeNodeScope(jjtn001, true);
+                 }
         }
+        jj_consume_token(RPAREN);
         break;
         }
       default:

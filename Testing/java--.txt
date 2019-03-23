@@ -10,7 +10,7 @@ class exemplo
 
     public int ex(int param1, int param2)
     {
-        while(1 + 1 * 2)
+        while(1 + (1 * 2))
         {
             
         }
