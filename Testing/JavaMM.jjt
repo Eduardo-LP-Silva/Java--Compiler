@@ -142,10 +142,15 @@ void Statement() #void: {}
     | Stmt()
 }
 
-void Stmt(): {Token n, o;}
+void Stmt() #void: {}
 {
-    [LOOKAHEAD(2) n=<IDENTIFIER> {jjtThis.name = n.image;} [<LBRACK> Expression() <RBRACK>] 
-    o=<EQUAL> {jjtThis.operator = o.image;}] Expression() <SEMI>
+    LOOKAHEAD(2) lhs() <EQUAL> Expression() <SEMI> #EQUALS(2)
+    | Expression() <SEMI> #Stmt
+}
+
+void lhs(): {Token n;}
+{
+    n=<IDENTIFIER> {jjtThis.name = n.image;} [<LBRACK> Expression() <RBRACK>]
 }
 
 void While(): {}
@@ -169,65 +174,51 @@ void Member(): {Token n;}
     n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
 }
 
-// Ver como distinguir boolean expressions de arithmetic
-void Expression(): {}
+void Expression(): {Token n;}
 {
-    EXPR() [<LBRACK> EXPR() <RBRACK> | Member()]
-    | <NEW> (<IDENTIFIER> <LPAREN> <RPAREN> | <INT> <LBRACK> Expression() <RBRACK>)
-    | <NOT> EXPR()
-    /*
-    Expression() (<AND> | <LOWER> | <BIGGER> | <ADD> | <SUB> | <MUL> | <DIV>)* Expression()   
-    | Expression() <LBRACK> <RBRACK> Expression()
-    | Expression() <DOT> "length"
-    | Expression() <DOT> <IDENTIFIER> <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>
-    | <TRUE>
-    | <FALSE>
-    | <IDENTIFIER>
-    | <THIS>
-    | <INTEGER>
-    | <NEW> <INT> <LBRACK> Expression() <RBRACK>
-    | <NEW> <IDENTIFIER> <LPAREN> <RPAREN> //E classes com argumentos no construtor?
-    | <NOT> Expression()
-    | <LPAREN> Expression() <RPAREN> */
+    [<NOT>] EXPR() [<LBRACK> EXPR() <RBRACK> | Member()]
+    | <NEW> (n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> <RPAREN> 
+        | <INT> {jjtThis.name = "int[]";} <LBRACK> Expression() <RBRACK>)
 }
 
-/*
-void BOOLEAN_EXPR(): {}
+void EXPR()  #void: {}
 {
-    [<NOT>] BOOL_EXPR() [<AND> BOOLEAN_EXPR()] //Faltam ()
-    | <TRUE>
-    | <FALSE>
+    EXPR_2() (<AND> EXPR_2() #AND(2))*   
 }
 
-void BOOL_EXPR(): {}
+void EXPR_2()  #void: {}
 {
-    ARIT_EXPR() (<LOWER> | <NOT> <EQUAL>) ARIT_EXPR()
-    | <LPAREN> BOOLEAN_EXPR() <RPAREN>
-} */
-
-
-void EXPR(): {}
-{
-    EXPR_2(1)
-    [
-        (<ADD> | <SUB> | <LOWER>) EXPR_2(1)
-    ]
-}
-
-void EXPR_2(int sign): {}
-{
-    EXPR_3(sign)
-    [
-        (<MUL> | <DIV> | <AND>) EXPR_3(sign)
-    ]
+    EXPR_3() (<LOWER> EXPR_3() #LOWER(2))* 
 } 
 
-void EXPR_3(int sign): {}
+void EXPR_3()  #void: {}
 {
-    <LITERAL>
-    | <THIS>
-    | <TRUE>
-    | <FALSE>
-    | <SUB> EXPR_3(-1)
-    | <IDENTIFIER>
+    EXPR_4() (ADDSUB())*
+}
+
+void ADDSUB() #void: {}
+{
+    <ADD> EXPR_4() #ADD(2)
+    | <SUB> EXPR_4() #SUB(2)
+}
+
+void EXPR_4() #void: {}
+{
+    EXPR_5() (MULDIV())*
+}
+
+void MULDIV() #void: {}
+{
+    <MUL> EXPR_5() #MUL(2)
+    | <DIV> EXPR_5() #DIV(2)
+}
+
+void EXPR_5() #TERM: {Token t; Boolean b = false;}
+{
+    [<SUB> {b = true;}] t=<LITERAL> {jjtThis.name = t.image; if(b) jjtThis.name = "-" + jjtThis.name;}
+    | t=<THIS> {jjtThis.name = t.image;} 
+    | t=<TRUE> {jjtThis.name = t.image;}
+    | t=<FALSE> {jjtThis.name = t.image;}
+    | t=<IDENTIFIER> {jjtThis.name = t.image;}
+    | <LPAREN> EXPR() <RPAREN> #ENCLOSED_EXPR
 }

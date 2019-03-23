@@ -13,7 +13,6 @@ class SimpleNode implements Node {
   protected String name;
   protected String returnType;
   protected String type;
-  protected String operator;
 
   public SimpleNode(int i) {
     id = i;
@@ -71,21 +70,25 @@ class SimpleNode implements Node {
 
   public void dump(String prefix) 
   {
-    System.out.print(toString(prefix) + " (");
+    System.out.print(toString(prefix));
 
-    if(name != null)
-      System.out.print("Name: " + name);
+    if(name != null || returnType != null || type != null)
+    {
+      System.out.print(" (");
 
-    if(returnType != null)
-      System.out.print(" | Return: " + returnType);
+      if(name != null)
+      System.out.print("Value: " + name);
 
-    if(type != null)
-      System.out.print(" | Type: " + type);
+      if(returnType != null)
+        System.out.print(" | Return: " + returnType);
 
-    if(operator != null)
-      System.out.print(" | Operator: " + operator);
+      if(type != null)
+        System.out.print(" | Type: " + type);
 
-    System.out.println(")");
+      System.out.println(")");
+    }
+    else
+      System.out.println("");
 
     if (children != null) 
     {
