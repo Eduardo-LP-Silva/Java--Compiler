@@ -11,7 +11,7 @@ class SimpleNode implements Node {
   protected JavaMM parser;
 
   protected String name;
-  protected String returnValue;
+  protected String returnType;
   protected String type;
   protected String operator;
 
@@ -69,12 +69,32 @@ class SimpleNode implements Node {
   /* Override this method if you want to customize how the node dumps
      out its children. */
 
-  public void dump(String prefix) {
-    System.out.println(toString(prefix));
-    if (children != null) {
-      for (int i = 0; i < children.length; ++i) {
+  public void dump(String prefix) 
+  {
+    System.out.print(toString(prefix) + " (");
+
+    if(name != null)
+      System.out.print("Name: " + name);
+
+    if(returnType != null)
+      System.out.print(" | Return: " + returnType);
+
+    if(type != null)
+      System.out.print(" | Type: " + type);
+
+    if(operator != null)
+      System.out.print(" | Operator: " + operator);
+
+    System.out.println(")");
+
+    if (children != null) 
+    {
+      for (int i = 0; i < children.length; ++i) 
+      {
         SimpleNode n = (SimpleNode)children[i];
-        if (n != null) {
+
+        if (n != null) 
+        {
           n.dump(prefix + " ");
         }
       }

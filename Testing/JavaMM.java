@@ -105,7 +105,7 @@ jjtn000.name = n.image;
         case BOOL:
         case INT:
         case IDENTIFIER:{
-          MethodDeclaration();
+          Method();
           break;
           }
         default:
@@ -236,20 +236,13 @@ if (jjtc000) {
     }
   }
 
-  static final public void MethodDeclaration() throws ParseException {
-    Type();
-    Method();
-    jj_consume_token(RETURN);
-    Expression();
-    jj_consume_token(SEMI);
-    jj_consume_token(RBRACE);
-  }
-
   static final public void Method() throws ParseException {/*@bgen(jjtree) Method */
                 SimpleNode jjtn000 = new SimpleNode(JJTMETHOD);
                 boolean jjtc000 = true;
-                jjtree.openNodeScope(jjtn000);Token n;
+                jjtree.openNodeScope(jjtn000);Token n; String r;
     try {
+      r = Type();
+jjtn000.returnType = r;
       n = jj_consume_token(IDENTIFIER);
 jjtn000.name = n.image;
       jj_consume_token(LPAREN);
@@ -312,6 +305,37 @@ jjtn000.name = n.image;
         }
         Statement();
       }
+      Return();
+      jj_consume_token(SEMI);
+      jj_consume_token(RBRACE);
+    } catch (Throwable jjte000) {
+if (jjtc000) {
+        jjtree.clearNodeScope(jjtn000);
+        jjtc000 = false;
+      } else {
+        jjtree.popNode();
+      }
+      if (jjte000 instanceof RuntimeException) {
+        {if (true) throw (RuntimeException)jjte000;}
+      }
+      if (jjte000 instanceof ParseException) {
+        {if (true) throw (ParseException)jjte000;}
+      }
+      {if (true) throw (Error)jjte000;}
+    } finally {
+if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+  }
+
+  static final public void Return() throws ParseException {/*@bgen(jjtree) Return */
+  SimpleNode jjtn000 = new SimpleNode(JJTRETURN);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+    try {
+      jj_consume_token(RETURN);
+      Expression();
     } catch (Throwable jjte000) {
 if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -998,6 +1022,12 @@ if (jjtc000) {
     return false;
   }
 
+  static private boolean jj_3_2()
+ {
+    if (jj_3R_10()) return true;
+    return false;
+  }
+
   static private boolean jj_3R_10()
  {
     if (jj_3R_12()) return true;
@@ -1024,12 +1054,6 @@ if (jjtc000) {
   static private boolean jj_3R_16()
  {
     if (jj_scan_token(LBRACK)) return true;
-    return false;
-  }
-
-  static private boolean jj_3_2()
- {
-    if (jj_3R_10()) return true;
     return false;
   }
 

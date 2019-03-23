@@ -5,18 +5,19 @@ public interface JavaMMTreeConstants
   public int JJTCLASS = 1;
   public int JJTVAR = 2;
   public int JJTMAIN = 3;
-  public int JJTVOID = 4;
-  public int JJTMETHOD = 5;
+  public int JJTMETHOD = 4;
+  public int JJTRETURN = 5;
   public int JJTARG = 6;
-  public int JJTSTMT = 7;
-  public int JJTWHILE = 8;
-  public int JJTIF = 9;
-  public int JJTELSE = 10;
-  public int JJTMEMBER = 11;
-  public int JJTEXPRESSION = 12;
-  public int JJTEXPR = 13;
-  public int JJTEXPR_2 = 14;
-  public int JJTEXPR_3 = 15;
+  public int JJTVOID = 7;
+  public int JJTSTMT = 8;
+  public int JJTWHILE = 9;
+  public int JJTIF = 10;
+  public int JJTELSE = 11;
+  public int JJTMEMBER = 12;
+  public int JJTEXPRESSION = 13;
+  public int JJTEXPR = 14;
+  public int JJTEXPR_2 = 15;
+  public int JJTEXPR_3 = 16;
 
 
   public String[] jjtNodeName = {
@@ -24,9 +25,10 @@ public interface JavaMMTreeConstants
     "Class",
     "Var",
     "Main",
-    "void",
     "Method",
+    "Return",
     "Arg",
+    "void",
     "Stmt",
     "While",
     "If",
@@ -38,4 +40,4 @@ public interface JavaMMTreeConstants
     "EXPR_3",
   };
 }
-/* JavaCC - OriginalChecksum=47448eb789d2222bc6b1ae29cc7f5c85 (do not edit this line) */
+/* JavaCC - OriginalChecksum=f997b3b6a8d7dc639a83f7e3187aeba8 (do not edit this line) */

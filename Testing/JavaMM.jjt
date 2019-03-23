@@ -96,7 +96,7 @@ SimpleNode Program(): {}
 void ClassDeclaration() #Class: {Token n;}
 {
     <CLASS>  n=<IDENTIFIER> {jjtThis.name = n.image;} [<EXT> <IDENTIFIER>] 
-    <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | MethodDeclaration()))* <RBRACE>
+    <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | Method()))* <RBRACE>
 }
 
 void VarDeclaration() #Var: {Token n; String t;}
@@ -110,15 +110,16 @@ void MainDeclaration() #Main: {}
     <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>  
 }
 
-void MethodDeclaration() #void: {}
+void Method(): {Token n; String r;}
 {
-    Type() Method() <RETURN> Expression() <SEMI> <RBRACE>
+    r=Type() {jjtThis.returnType = r;} n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Arg() 
+    (<COMMA> Arg())*] <RPAREN> <LBRACE> (LOOKAHEAD(2) VarDeclaration())* (Statement())*
+    Return() <SEMI> <RBRACE>
 }
 
-void Method(): {Token n;}
+void Return(): {}
 {
-    n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Arg() 
-    (<COMMA> Arg())*] <RPAREN> <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())*
+    <RETURN> Expression() 
 }
 
 void Arg(): {Token n; String t;}
