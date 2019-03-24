@@ -1,23 +1,27 @@
 class exemplo
 {
-    int varEx;
-    boolean boolEx;
-
     public static void main(String[] args)
     {
-        i = 1;
+        int varEx;
+        boolean boolEx;
+
+        boolEx = args[0];
+
+        varEx = boolEx.length;
+
+
     }
 
     public int ex(int param1, int param2)
     {
         while(1 + (1 * 2))
         {
-            
+            boolEx = !(varEx < 5) && varEx < (-1 + 1);
         }
 
         if(i && 2 < 3)
         {
-
+            
         }
         else
         {

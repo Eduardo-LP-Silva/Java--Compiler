@@ -176,9 +176,9 @@ void Member(): {Token n;}
 
 void Expression(): {Token n;}
 {
-    [<NOT>] EXPR() [<LBRACK> EXPR() <RBRACK> | Member()]
+    EXPR() [<LBRACK> EXPR() <RBRACK> {jjtThis.type = "array";} | Member()]
     | <NEW> (n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtThis.name = "int[]";} <LBRACK> Expression() <RBRACK>)
+        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>)
 }
 
 void EXPR()  #void: {}
@@ -213,12 +213,18 @@ void MULDIV() #void: {}
     | <DIV> EXPR_5() #DIV(2)
 }
 
-void EXPR_5() #TERM: {Token t; Boolean b = false;}
+void EXPR_5() #void: {}
+{
+    EXPR_6()
+    | <NOT> EXPR_6() #NOT(1)
+}
+
+void EXPR_6() #TERM: {Token t; Boolean b = false;}
 {
     [<SUB> {b = true;}] t=<LITERAL> {jjtThis.name = t.image; if(b) jjtThis.name = "-" + jjtThis.name;}
     | t=<THIS> {jjtThis.name = t.image;} 
     | t=<TRUE> {jjtThis.name = t.image;}
     | t=<FALSE> {jjtThis.name = t.image;}
     | t=<IDENTIFIER> {jjtThis.name = t.image;}
-    | <LPAREN> EXPR() #ENCLOSED_EXPR <RPAREN> 
+    | <LPAREN> EXPR() #ENCLOSED_EXPR <RPAREN>
 }

@@ -77,13 +77,13 @@ class SimpleNode implements Node {
       System.out.print(" (");
 
       if(name != null)
-      System.out.print("Value: " + name);
+        System.out.print("Value: " + name);
 
       if(returnType != null)
-        System.out.print(" | Return: " + returnType);
+        System.out.print(" Return: " + returnType);
 
       if(type != null)
-        System.out.print(" | Type: " + type);
+        System.out.print(" Type: " + type);
 
       System.out.println(")");
     }

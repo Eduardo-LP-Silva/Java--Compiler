@@ -23,8 +23,9 @@ public interface JavaMMTreeConstants
   public int JJTSUB = 19;
   public int JJTMUL = 20;
   public int JJTDIV = 21;
-  public int JJTTERM = 22;
-  public int JJTENCLOSED_EXPR = 23;
+  public int JJTNOT = 22;
+  public int JJTTERM = 23;
+  public int JJTENCLOSED_EXPR = 24;
 
 
   public String[] jjtNodeName = {
@@ -50,8 +51,9 @@ public interface JavaMMTreeConstants
     "SUB",
     "MUL",
     "DIV",
+    "NOT",
     "TERM",
     "ENCLOSED_EXPR",
   };
 }
-/* JavaCC - OriginalChecksum=06adafe728013f0dc531babf5fb76c89 (do not edit this line) */
+/* JavaCC - OriginalChecksum=80162819ac44eb400659a98c5c26ac78 (do not edit this line) */
