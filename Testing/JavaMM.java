@@ -576,10 +576,16 @@ if (jjtc000) {
   boolean jjtc000 = true;
   jjtree.openNodeScope(jjtn000);
     try {
-      jj_consume_token(WHILE);
-      jj_consume_token(LPAREN);
-      Expression();
-      jj_consume_token(RPAREN);
+      try {
+        jj_consume_token(WHILE);
+        jj_consume_token(LPAREN);
+        Expression();
+        jj_consume_token(RPAREN);
+      } catch (ParseException e) {
+System.out.println(e.toString());
+
+        error_skip_to(LBRACE);
+      }
       Statement();
     } catch (Throwable jjte000) {
 if (jjtc000) {
@@ -788,7 +794,7 @@ jjtn000.type = "array";
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
         case IDENTIFIER:{
           n = jj_consume_token(IDENTIFIER);
-jjtn000.name = n.image;
+jjtn000.name = "new " + n.image;
           jj_consume_token(LPAREN);
           jj_consume_token(RPAREN);
           break;
@@ -1234,6 +1240,15 @@ if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
       }
     }
+  }
+
+  static void error_skip_to(int kind) throws ParseException {Token t;
+
+    do
+    {
+      t = getNextToken();
+    }
+    while (t.kind != kind);
   }
 
   static private boolean jj_2_1(int xla)

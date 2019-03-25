@@ -1,7 +1,7 @@
-//Podemos mudar LOOKAHEAD dinamicamente (p.exemplo para int vs int[])
 options 
 {
     LOOKAHEAD = 1;
+    ERROR_REPORTING = true;
 }
 
 PARSER_BEGIN(JavaMM)
@@ -155,7 +155,18 @@ void lhs(): {Token n;}
 
 void While(): {}
 {
-    <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+    try
+    {
+        <WHILE> <LPAREN> Expression() <RPAREN> 
+    }
+    catch(ParseException e)
+    {
+        System.out.println(e.toString());
+
+        error_skip_to(LBRACE);
+    }
+
+    Statement()
 }
 
 void If(): {}
@@ -177,7 +188,7 @@ void Member(): {Token n;}
 void Expression(): {Token n;}
 {
     EXPR() [<LBRACK> EXPR() <RBRACK> {jjtThis.type = "array";} | Member()]
-    | <NEW> (n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> <RPAREN> 
+    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
         | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>)
 }
 
@@ -228,3 +239,15 @@ void EXPR_6() #TERM: {Token t; Boolean b = false;}
     | t=<IDENTIFIER> {jjtThis.name = t.image;}
     | <LPAREN> EXPR() #ENCLOSED_EXPR <RPAREN>
 }
+
+JAVACODE
+void error_skip_to(int kind) #void
+{
+    Token t;
+
+    do 
+    {
+      t = getNextToken();
+    } 
+    while (t.kind != kind);
+  }

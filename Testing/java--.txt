@@ -1,31 +1,39 @@
-class exemplo
+class exemplo extends MainClass
 {
     public static void main(String[] args)
     {
         int varEx;
+        int l;
         boolean boolEx;
+        SomeClass classExp;
+        int[] array;
+        
+        varEx = array[0];
+        array[0] = 1;
 
-        boolEx = args[0];
-
-        varEx = boolEx.length;
-
-
+        l = boolEx.length;
+        boolEx = classExp.getBool(1);
     }
 
-    public int ex(int param1, int param2)
+    public int ex(int i, int boolEx)
     {
-        while(1 + (1 * 2))
+        SomeClass c;
+
+        i = 0;
+
+        while(i < 10)
         {
-            boolEx = !(varEx < 5) && varEx < (-1 + 1);
+            boolEx = true;
+            i = i + 1;
         }
 
-        if(i && 2 < 3)
+        if(boolEx)
         {
-            
+            c = new SomeClass();
         }
         else
         {
-
+            this.someFunc(1, boolEx);            
         }
 
         return 1;
