@@ -11,6 +11,11 @@ class exemplo extends MainClass
         varEx = array[0];
         array[0] = 1;
 
+        varEx;
+
+        i = new int[1 + 2];
+        1 + 1;
+
         l = boolEx.length;
         boolEx = classExp.getBool(1);
     }
@@ -25,6 +30,8 @@ class exemplo extends MainClass
         {
             boolEx = true;
             i = i + 1;
+
+            Smt[0] = 1;
         }
 
         if(boolEx)

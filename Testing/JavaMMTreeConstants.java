@@ -10,22 +10,20 @@ public interface JavaMMTreeConstants
   public int JJTARG = 6;
   public int JJTVOID = 7;
   public int JJTEQUALS = 8;
-  public int JJTSTMT = 9;
-  public int JJTLHS = 10;
-  public int JJTWHILE = 11;
-  public int JJTIF = 12;
-  public int JJTELSE = 13;
-  public int JJTMEMBER = 14;
-  public int JJTEXPRESSION = 15;
-  public int JJTAND = 16;
-  public int JJTLOWER = 17;
-  public int JJTADD = 18;
-  public int JJTSUB = 19;
-  public int JJTMUL = 20;
-  public int JJTDIV = 21;
-  public int JJTNOT = 22;
-  public int JJTTERM = 23;
-  public int JJTENCLOSED_EXPR = 24;
+  public int JJTTERM = 9;
+  public int JJTWHILE = 10;
+  public int JJTIF = 11;
+  public int JJTELSE = 12;
+  public int JJTMEMBER = 13;
+  public int JJTARRAYACCS = 14;
+  public int JJTAND = 15;
+  public int JJTLOWER = 16;
+  public int JJTADD = 17;
+  public int JJTSUB = 18;
+  public int JJTMUL = 19;
+  public int JJTDIV = 20;
+  public int JJTNOT = 21;
+  public int JJTENCLOSED_EXPR = 22;
 
 
   public String[] jjtNodeName = {
@@ -38,13 +36,12 @@ public interface JavaMMTreeConstants
     "Arg",
     "void",
     "EQUALS",
-    "Stmt",
-    "lhs",
+    "TERM",
     "While",
     "If",
     "Else",
     "Member",
-    "Expression",
+    "ArrayAccs",
     "AND",
     "LOWER",
     "ADD",
@@ -52,8 +49,7 @@ public interface JavaMMTreeConstants
     "MUL",
     "DIV",
     "NOT",
-    "TERM",
     "ENCLOSED_EXPR",
   };
 }
-/* JavaCC - OriginalChecksum=80162819ac44eb400659a98c5c26ac78 (do not edit this line) */
+/* JavaCC - OriginalChecksum=dadd5076625df79dd6a8700cde6a3356 (do not edit this line) */

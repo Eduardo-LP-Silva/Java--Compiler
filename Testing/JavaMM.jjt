@@ -144,13 +144,17 @@ void Statement() #void: {}
 
 void Stmt() #void: {}
 {
+    /*
     LOOKAHEAD(2) lhs() <EQUAL> Expression() <SEMI> #EQUALS(2)
-    | Expression() <SEMI> #Stmt
+    | Expression() <SEMI> */
+
+    lhs() [<EQUAL> Expression() #EQUALS(2)] <SEMI>
+    | Expression_NO_ID() <SEMI> 
 }
 
-void lhs(): {Token n;}
+void lhs() #TERM: {Token n;}
 {
-    n=<IDENTIFIER> {jjtThis.name = n.image;} [<LBRACK> Expression() <RBRACK>]
+    n=<IDENTIFIER> {jjtThis.name = n.image;} [ArrayAccs()]
 }
 
 void While(): {}
@@ -185,11 +189,19 @@ void Member(): {Token n;}
     n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
 }
 
-void Expression(): {Token n;}
+void ArrayAccs(): {}
 {
-    EXPR() [<LBRACK> EXPR() <RBRACK> {jjtThis.type = "array";} | Member()]
-    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>)
+    <LBRACK> Expression() <RBRACK>
+}
+
+void Expression() #void: {}
+{
+    EXPR() //As explained in Moodle, arrays in Java-- are only int arrays, thus having no members
+}
+
+void Expression_NO_ID() #void: {}
+{
+    EXPR_NO_ID()
 }
 
 void EXPR()  #void: {}
@@ -197,14 +209,29 @@ void EXPR()  #void: {}
     EXPR_2() (<AND> EXPR_2() #AND(2))*   
 }
 
+void EXPR_NO_ID() #void: {}
+{
+    EXPR_2_NO_ID() (<AND> EXPR_2_NO_ID() #AND(2))*
+}
+
 void EXPR_2()  #void: {}
 {
     EXPR_3() (<LOWER> EXPR_3() #LOWER(2))* 
+}
+
+void EXPR_2_NO_ID()  #void: {}
+{
+    EXPR_3_NO_ID() (<LOWER> EXPR_3_NO_ID() #LOWER(2))* 
 } 
 
 void EXPR_3()  #void: {}
 {
     EXPR_4() (ADDSUB())*
+}
+
+void EXPR_3_NO_ID()  #void: {}
+{
+    EXPR_4_NO_ID() (ADDSUB_NO_ID())*
 }
 
 void ADDSUB() #void: {}
@@ -213,9 +240,20 @@ void ADDSUB() #void: {}
     | <SUB> EXPR_4() #SUB(2)
 }
 
+void ADDSUB_NO_ID() #void: {}
+{
+    <ADD> EXPR_4_NO_ID() #ADD(2)
+    | <SUB> EXPR_4_NO_ID() #SUB(2)
+}
+
 void EXPR_4() #void: {}
 {
     EXPR_5() (MULDIV())*
+}
+
+void EXPR_4_NO_ID() #void: {}
+{
+    EXPR_5_NO_ID() (MULDIV_NO_ID())*
 }
 
 void MULDIV() #void: {}
@@ -224,20 +262,53 @@ void MULDIV() #void: {}
     | <DIV> EXPR_5() #DIV(2)
 }
 
+void MULDIV_NO_ID() #void: {}
+{
+    <MUL> EXPR_5_NO_ID() #MUL(2)
+    | <DIV> EXPR_5_NO_ID() #DIV(2)
+}
+
 void EXPR_5() #void: {}
 {
     EXPR_6()
     | <NOT> EXPR_6() #NOT(1)
 }
 
-void EXPR_6() #TERM: {Token t; Boolean b = false;}
+void EXPR_5_NO_ID() #void: {}
 {
-    [<SUB> {b = true;}] t=<LITERAL> {jjtThis.name = t.image; if(b) jjtThis.name = "-" + jjtThis.name;}
+    EXPR_6_NO_ID()
+    | <NOT> EXPR_6_NO_ID() #NOT(1)
+}
+
+void EXPR_6() #TERM: {Token t, n; Boolean b = false;}
+{
+    ([<SUB> {b = true;}] t=<LITERAL> {jjtThis.name = t.image; if(b) jjtThis.name = "-" + jjtThis.name;}
     | t=<THIS> {jjtThis.name = t.image;} 
     | t=<TRUE> {jjtThis.name = t.image;}
     | t=<FALSE> {jjtThis.name = t.image;}
     | t=<IDENTIFIER> {jjtThis.name = t.image;}
-    | <LPAREN> EXPR() #ENCLOSED_EXPR <RPAREN>
+    | <LPAREN> Expression() #ENCLOSED_EXPR <RPAREN>
+    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
+        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    [EXPR_7()]
+}
+
+void EXPR_6_NO_ID() #TERM: {Token t, n; Boolean b = false;}
+{
+    ([<SUB> {b = true;}] t=<LITERAL> {jjtThis.name = t.image; if(b) jjtThis.name = "-" + jjtThis.name;}
+    | t=<THIS> {jjtThis.name = t.image;} 
+    | t=<TRUE> {jjtThis.name = t.image;}
+    | t=<FALSE> {jjtThis.name = t.image;}
+    | <LPAREN> Expression() #ENCLOSED_EXPR <RPAREN>
+    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
+        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    [EXPR_7()]
+}
+
+void EXPR_7() #void: {}
+{
+    ArrayAccs() 
+    | Member()
 }
 
 JAVACODE
