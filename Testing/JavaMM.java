@@ -594,7 +594,7 @@ if (jjtc000) {
       } catch (ParseException e) {
 System.out.println(e.toString());
 
-        error_skip_to(LBRACE);
+        error_skip_to(RPAREN);
       }
       Statement();
     } catch (Throwable jjte000) {

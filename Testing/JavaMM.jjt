@@ -167,7 +167,7 @@ void While(): {}
     {
         System.out.println(e.toString());
 
-        error_skip_to(LBRACE);
+        error_skip_to(RPAREN);
     }
 
     Statement()
