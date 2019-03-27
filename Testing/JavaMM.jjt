@@ -95,8 +95,13 @@ SimpleNode Program(): {}
 
 void ClassDeclaration() #Class: {Token n;}
 {
-    <CLASS>  n=<IDENTIFIER> {jjtThis.name = n.image;} [<EXT> <IDENTIFIER>] 
+    <CLASS>  n=<IDENTIFIER> {jjtThis.name = n.image;} [Extends()] 
     <LBRACE> (VarDeclaration())* (<PUBLIC> (MainDeclaration() | Method()))* <RBRACE>
+}
+
+void Extends(): {Token n;}
+{
+    <EXT> n=<IDENTIFIER> {jjtThis.name = n.image;}
 }
 
 void VarDeclaration() #Var: {Token n; String t;}
@@ -154,7 +159,7 @@ void Stmt() #void: {}
 
 void lhs() #TERM: {Token n;}
 {
-    n=<IDENTIFIER> {jjtThis.name = n.image;} [ArrayAccs()]
+    n=<IDENTIFIER> {jjtThis.name = n.image;} [ArrayAccs() | Member()]
 }
 
 void While(): {}
@@ -185,7 +190,8 @@ void Else(): {}
 
 void Member(): {Token n;}
 {
-    <DOT> (n=<LENGTH> {jjtThis.name = n.image;} | 
+    <DOT> 
+    (n=<LENGTH> {jjtThis.name = n.image;} | 
     n=<IDENTIFIER> {jjtThis.name = n.image;} <LPAREN> [Expression() (<COMMA> Expression())*] <RPAREN>)
 }
 

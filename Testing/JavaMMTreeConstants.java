@@ -3,32 +3,34 @@ public interface JavaMMTreeConstants
 {
   public int JJTPROGRAM = 0;
   public int JJTCLASS = 1;
-  public int JJTVAR = 2;
-  public int JJTMAIN = 3;
-  public int JJTMETHOD = 4;
-  public int JJTRETURN = 5;
-  public int JJTARG = 6;
-  public int JJTVOID = 7;
-  public int JJTEQUALS = 8;
-  public int JJTTERM = 9;
-  public int JJTWHILE = 10;
-  public int JJTIF = 11;
-  public int JJTELSE = 12;
-  public int JJTMEMBER = 13;
-  public int JJTARRAYACCS = 14;
-  public int JJTAND = 15;
-  public int JJTLOWER = 16;
-  public int JJTADD = 17;
-  public int JJTSUB = 18;
-  public int JJTMUL = 19;
-  public int JJTDIV = 20;
-  public int JJTNOT = 21;
-  public int JJTENCLOSED_EXPR = 22;
+  public int JJTEXTENDS = 2;
+  public int JJTVAR = 3;
+  public int JJTMAIN = 4;
+  public int JJTMETHOD = 5;
+  public int JJTRETURN = 6;
+  public int JJTARG = 7;
+  public int JJTVOID = 8;
+  public int JJTEQUALS = 9;
+  public int JJTTERM = 10;
+  public int JJTWHILE = 11;
+  public int JJTIF = 12;
+  public int JJTELSE = 13;
+  public int JJTMEMBER = 14;
+  public int JJTARRAYACCS = 15;
+  public int JJTAND = 16;
+  public int JJTLOWER = 17;
+  public int JJTADD = 18;
+  public int JJTSUB = 19;
+  public int JJTMUL = 20;
+  public int JJTDIV = 21;
+  public int JJTNOT = 22;
+  public int JJTENCLOSED_EXPR = 23;
 
 
   public String[] jjtNodeName = {
     "Program",
     "Class",
+    "Extends",
     "Var",
     "Main",
     "Method",
@@ -52,4 +54,4 @@ public interface JavaMMTreeConstants
     "ENCLOSED_EXPR",
   };
 }
-/* JavaCC - OriginalChecksum=dadd5076625df79dd6a8700cde6a3356 (do not edit this line) */
+/* JavaCC - OriginalChecksum=640f411346f78310114ecb5d6fdf45e8 (do not edit this line) */
