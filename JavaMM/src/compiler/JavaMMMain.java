@@ -10,6 +10,7 @@ import java.util.Set;
 class JavaMMMain
 {
     private static Hashtable<String, SymbolTable> symbolTables;
+    private static String className;
     public static void main(String[] args) throws Exception 
     {
         if (args.length < 1) 
@@ -23,24 +24,198 @@ class JavaMMMain
         JavaMM parser = new JavaMM(new FileInputStream(args[0]));
         SimpleNode root = parser.Program();
 
-        buildSymbolTables(root);
-        printSymbolTables();
+        if(buildSymbolTables(root))
+            semanticAnalysis(root);
 
     }
 
-    public static void buildSymbolTables(SimpleNode root)
+    public static Boolean semanticAnalysis(SimpleNode root)
     {
+        Boolean continueAnalysis;
+        Node classNode = root.jjtGetChild(0);
+
+        for (int i = 0; i < classNode.jjtGetNumChildren(); i++) 
+        {
+            Node child = classNode.jjtGetChild(i);
+
+            switch (child.toString()) 
+            {
+                case "Main":
+                case "Method":
+                    continueAnalysis = analyseFunction(child);
+                    break;
+
+                default:
+                    continue;
+            }
+
+            if (!continueAnalysis)
+                return false;
+        }
+
+        return true;
+    }
+
+    public static Boolean analyseFunction(Node func)
+    {
+        for(int i = 0; i < func.jjtGetNumChildren(); i++)
+        {
+            if(func.jjtGetChild(i).toString().equals("Var") || func.jjtGetChild(i).toString().equals("Arg"))
+                continue;
+            else
+                if(!analyseStatement(func.jjtGetChild(i), func.getName()))
+                {
+                    System.out.println("Error in function " + func.getName() + " statement(s)");
+                    return false;
+                }    
+        }
+
+        return true;
+    }
+
+    public static Boolean analyseStatement(Node statement, String funcName)
+    {
+        Boolean continueAnalysis;
+        
+        switch (statement.toString()) 
+        {
+            case "If":
+                continueAnalysis = analyseIf(statement, funcName);
+                break;
+
+            case "While":
+                continueAnalysis = analyseWhile(statement, funcName);
+                break;
+
+            case "TERM": // Verify standalone terms
+
+                break;
+
+            case "EQUALS":
+
+                break;
+
+            // Standalone arithmetic and boolean expressions not valid (?)
+            case "AND":
+            case "LOWER":
+            case "ADD":
+            case "SUB":
+            case "MUL":
+            case "DIV":
+                System.out.println("Standalone arithmetic or boolean expressions detected in " + funcName);
+                return false;
+
+            default:
+                System.out.println("Unknown statement type " + statement.toString() + " in function " + funcName);
+                return false;
+        }
+
+        /*
+         * if(!continueAnalysis) return false;
+         */
+        
+
+        return true;
+    }
+
+    public static Boolean analyseIf(Node ifNode, String funcName)
+    {
+        if(ifNode.jjtGetNumChildren() < 3)
+        {
+            System.out.println("If in " + funcName + " doesn't have enough children");
+            return false;
+        }
+
+        if(!evaluatesToBoolean(ifNode.jjtGetChild(0), funcName))
+        {
+            System.out.println("if condition in function " + funcName + " doesn't evaluate to a boolean");
+            return false;
+        }
+            
+        return true;
+    }
+
+    public static Boolean analyseWhile(Node whileNode, String funcName)
+    {
+        return true;
+    }
+
+    public static Boolean analyseStandAloneTerm(Node term, String funcName)
+    {
+        return true;
+    }
+
+    public static Boolean evaluatesToBoolean(Node expression, String funcName)
+    {
+        switch(expression.toString())
+        {
+            case "AND":
+                return expression.jjtGetNumChildren() == 2 
+                && evaluatesToBoolean(expression.jjtGetChild(0), funcName) 
+                && evaluatesToBoolean(expression.jjtGetChild(1), funcName);
+
+            case "LOWER":
+                return expression.jjtGetNumChildren() == 2 
+                && evaluatesToInt(expression.jjtGetChild(0), funcName) 
+                && evaluatesToInt(expression.jjtGetChild(1), funcName);
+
+            case "TERM":
+                return booleanTerm(expression, funcName);
+
+            case "ADD":
+            case "SUB":
+            case "MUL":
+            case "DIV":
+                System.out.println("Expression evaluates to arithmetic value instead of boolean in function " + funcName);
+                return false;
+
+            default:
+                System.out.println("Unexpected token in " + funcName + "'s boolean condition evaluation: " + expression.toString());
+                return false;
+        }
+    }
+
+    public static Boolean evaluatesToInt(Node expression, String funcName)
+    {
+        return true;
+    }
+
+    public static Boolean booleanTerm(Node term, String funcName)
+    {
+        if(term.getName() != null)
+        {
+            switch(term.getName())
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+        
+        return true;
+    }
+
+    public static Boolean intTerm(Node term, String funcName)
+    {
+        return true;
+    }
+
+    public static Boolean buildSymbolTables(SimpleNode root)
+    {
+        Node classNode;
+
         if(root.toString().equals("Program"))
         {
-            if(root.jjtGetNumChildren() != 0)
+            if(root.jjtGetNumChildren() != 0 && (classNode = root.jjtGetChild(0)).toString().equals("Class"))
             {
-                Node classNode = root.jjtGetChild(0);
-
                 if(classNode.toString().equals("Class"))
                 {
                     Boolean builtSymbolTable;
 
                     symbolTables.put(classNode.getName(), new SymbolTable());
+                    className = classNode.getName();
 
                     for(int i = 0; i < classNode.jjtGetNumChildren(); i++)
                     {
@@ -65,7 +240,7 @@ class JavaMMMain
                         }
 
                         if(!builtSymbolTable)
-                            return;
+                            return false;
                     }
                         
                 }
@@ -74,12 +249,17 @@ class JavaMMMain
             else
             {
                 System.out.println("Program doesn't have class");
-                return;
+                return false;
             }
             
         }
         else
+        {
             System.out.println("Root node doesn't qualify as program: " + root.toString());
+            return false;
+        }
+
+        return true;
     }
 
     public static boolean buildLocalSymbolTable(Node var, Node parentNode, boolean main)

@@ -294,8 +294,7 @@ void EXPR_6() #TERM: {Token t, n; Boolean b = false;}
     | t=<FALSE> {jjtThis.name = t.image;}
     | t=<IDENTIFIER> {jjtThis.name = t.image;}
     | <LPAREN> Expression() #ENCLOSED_EXPR <RPAREN>
-    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    | NEW())
     [EXPR_7()]
 }
 
@@ -306,8 +305,7 @@ void EXPR_6_NO_ID() #TERM: {Token t, n; Boolean b = false;}
     | t=<TRUE> {jjtThis.name = t.image;}
     | t=<FALSE> {jjtThis.name = t.image;}
     | <LPAREN> Expression() #ENCLOSED_EXPR <RPAREN>
-    | <NEW> (n=<IDENTIFIER> {jjtThis.name = "new " + n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtThis.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    | NEW())
     [EXPR_7()]
 }
 
@@ -315,6 +313,12 @@ void EXPR_7() #void: {}
 {
     ArrayAccs() 
     | Member()
+}
+
+void NEW(): {Token n;}
+{
+    <NEW> (n=<IDENTIFIER> {jjtThis.type = n.image;} <LPAREN> <RPAREN> 
+        | n=<INT> {jjtThis.type = "int[]";} ArrayAccs())
 }
 
 JAVACODE
@@ -327,4 +331,4 @@ void error_skip_to(int kind) #void
       t = getNextToken();
     } 
     while (t.kind != kind);
-  }
+}
