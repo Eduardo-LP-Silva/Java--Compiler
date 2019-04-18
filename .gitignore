@@ -1,1 +1,4 @@
 /Testing/open_cmd.bat
+/JavaMM/src/ast/*.class
+/JavaMM/src/compiler/*.class
+/JavaMM/src/symbol/*.class

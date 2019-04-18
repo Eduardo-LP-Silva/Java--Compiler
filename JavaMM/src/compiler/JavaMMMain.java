@@ -26,7 +26,6 @@ class JavaMMMain
 
         if(buildSymbolTables(root))
             semanticAnalysis(root);
-
     }
 
     public static Boolean semanticAnalysis(SimpleNode root)
@@ -275,16 +274,42 @@ class JavaMMMain
 
         newSymbol = new Symbol(var.getName(), var.getType());
 
-        if (!classST.putSymbol(newSymbol))
+        if(var.toString().equals("Arg"))
         {
-            System.out.println("Duplicate local variable " + var.getName() + " of type " + var.getType());
-            return false;
+            if (!classST.putArg(newSymbol))
+            {
+                System.out.println("Duplicate argument " + var.getName() + " of type " + var.getType());
+                return false;
+            }
+            else
+            {
+                if(main)
+                    symbolTables.put("main", classST);
+                else
+                    symbolTables.put(parentNode.getName(), classST);
+
+                return true;
+            }
         }
         else
         {
-            symbolTables.put(parentNode.getName(), classST);
-            return true;
+            if (!classST.putSymbol(newSymbol))
+            {
+                System.out.println("Duplicate local variable " + var.getName() + " of type " + var.getType());
+                return false;
+            }
+            else
+            {
+                if(main)
+                    symbolTables.put("main", classST);
+                else
+                    symbolTables.put(parentNode.getName(), classST);
+
+                return true;
+            }
         }
+
+       
     }
 
     public static boolean buildFunctionSymbolTable(Node func)
@@ -319,7 +344,7 @@ class JavaMMMain
             funcTable = new SymbolTable();
 
         funcTable.setReturnType("void");
-        funcTable.putSymbol(new Symbol(main.getName(), "String[]")); //Name in main = argument identifier
+        funcTable.putArg(new Symbol(main.getName(), "String[]")); //Name in main = argument identifier
         symbolTables.put("main", funcTable);
 
         for(int i = 0; i < main.jjtGetNumChildren(); i++)
@@ -336,18 +361,13 @@ class JavaMMMain
     {
         Set<String> keys = symbolTables.keySet();
         SymbolTable table;
-        Set<String> tableKeys;
-
+        
         for(String key: keys)
         {
             System.out.println("--- " + key + " symbol table ---\n");
-
             table = symbolTables.get(key);
-            tableKeys = table.getTable().keySet();
-
-            for(String tableKey: tableKeys)
-                System.out.println(table.getTable().get(tableKey).getType() + " " + table.getTable().get(tableKey).getName());
-
+            table.printArgs();
+            table.printTable();
             System.out.println("\n");
         }
     }
