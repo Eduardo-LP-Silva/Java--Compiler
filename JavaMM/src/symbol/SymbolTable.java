@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Iterator;
 import java.util.Set;
+import ast.*;
 
 public class SymbolTable
 {
@@ -26,7 +27,7 @@ public class SymbolTable
 
     public boolean putSymbol(Symbol symbol)
     {
-        String key = symbol.getName() + "-" + symbol.getValue();
+        String key = symbol.getName();
 
         if(table.get(key) == null)
         {
@@ -40,7 +41,7 @@ public class SymbolTable
 
     public boolean putArg(Symbol symbol)
     {
-        String key = symbol.getName() + "-" + symbol.getValue();
+        String key = symbol.getName();
 
         if(args.get(key) == null)
         {
@@ -49,6 +50,11 @@ public class SymbolTable
         }
         else
             return false;
+    }
+
+    public boolean checkArgs(Node member)
+    {
+        return true;
     }
 
     public void printTable()

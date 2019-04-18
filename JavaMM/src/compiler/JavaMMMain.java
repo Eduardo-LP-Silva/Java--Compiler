@@ -28,9 +28,9 @@ class JavaMMMain
             semanticAnalysis(root);
     }
 
-    public static Boolean semanticAnalysis(SimpleNode root)
+    public static boolean semanticAnalysis(SimpleNode root)
     {
-        Boolean continueAnalysis;
+        boolean continueAnalysis;
         Node classNode = root.jjtGetChild(0);
 
         for (int i = 0; i < classNode.jjtGetNumChildren(); i++) 
@@ -55,7 +55,7 @@ class JavaMMMain
         return true;
     }
 
-    public static Boolean analyseFunction(Node func)
+    public static boolean analyseFunction(Node func)
     {
         for(int i = 0; i < func.jjtGetNumChildren(); i++)
         {
@@ -72,9 +72,9 @@ class JavaMMMain
         return true;
     }
 
-    public static Boolean analyseStatement(Node statement, String funcName)
+    public static boolean analyseStatement(Node statement, String funcName)
     {
-        Boolean continueAnalysis;
+        boolean continueAnalysis;
         
         switch (statement.toString()) 
         {
@@ -87,11 +87,11 @@ class JavaMMMain
                 break;
 
             case "TERM": // Verify standalone terms
-
+                continueAnalysis = analyseStandAloneTerm(statement, funcName);
                 break;
 
             case "EQUALS":
-
+                continueAnalysis = analyseEquals(statement, funcName);
                 break;
 
             // Standalone arithmetic and boolean expressions not valid (?)
@@ -109,15 +109,13 @@ class JavaMMMain
                 return false;
         }
 
-        /*
-         * if(!continueAnalysis) return false;
-         */
+        if(!continueAnalysis) 
+            return false;
         
-
         return true;
     }
 
-    public static Boolean analyseIf(Node ifNode, String funcName)
+    public static boolean analyseIf(Node ifNode, String funcName)
     {
         if(ifNode.jjtGetNumChildren() < 3)
         {
@@ -130,21 +128,38 @@ class JavaMMMain
             System.out.println("if condition in function " + funcName + " doesn't evaluate to a boolean");
             return false;
         }
+
+        if(!analyseStatement(ifNode.jjtGetChild(1), funcName))
+        {
+            System.out.println("if 'then' statement is invalid in function " + funcName);
+            return false;
+        }
+
+        if(!analyseStatement(ifNode.jjtGetChild(2), funcName))
+        {
+            System.out.println("if 'else' statement is invalid in function " + funcName);
+            return false;
+        }
             
         return true;
     }
 
-    public static Boolean analyseWhile(Node whileNode, String funcName)
+    public static boolean analyseWhile(Node whileNode, String funcName)
     {
         return true;
     }
 
-    public static Boolean analyseStandAloneTerm(Node term, String funcName)
+    public static boolean analyseStandAloneTerm(Node term, String funcName)
     {
         return true;
     }
 
-    public static Boolean evaluatesToBoolean(Node expression, String funcName)
+    public static boolean analyseEquals(Node equals, String funcName)
+    {
+        return true;
+    }
+
+    public static boolean evaluatesToBoolean(Node expression, String funcName)
     {
         switch(expression.toString())
         {
@@ -152,6 +167,9 @@ class JavaMMMain
                 return expression.jjtGetNumChildren() == 2 
                 && evaluatesToBoolean(expression.jjtGetChild(0), funcName) 
                 && evaluatesToBoolean(expression.jjtGetChild(1), funcName);
+
+            case "NOT":
+                return expression.jjtGetNumChildren() == 1 && evaluatesToBoolean(expression.jjtGetChild(0), funcName);
 
             case "LOWER":
                 return expression.jjtGetNumChildren() == 2 
@@ -174,34 +192,223 @@ class JavaMMMain
         }
     }
 
-    public static Boolean evaluatesToInt(Node expression, String funcName)
+    public static boolean evaluatesToInt(Node expression, String funcName)
     {
-        return true;
+        switch(expression.toString())
+        {
+            case "AND":
+            case "LOWER":
+                System.out.println("Expression evaluates to integer value insead of boolean in function " + funcName);
+                return false;
+
+            case "TERM":
+                return intTerm(expression, funcName);
+
+            case "ADD":
+            case "SUB":
+            case "MUL":
+            case "DIV":
+                return expression.jjtGetNumChildren() == 2 
+                && evaluatesToInt(expression.jjtGetChild(0), funcName) 
+                && evaluatesToInt(expression.jjtGetChild(1), funcName);
+
+            default:
+                System.out.println("Unexpected token in " + funcName + "'s integer condition evaluation: " + expression.toString());
+                return false;
+        }
     }
 
-    public static Boolean booleanTerm(Node term, String funcName)
+    public static boolean booleanTerm(Node term, String funcName)
     {
         if(term.getName() != null)
         {
             switch(term.getName())
             {
+                case "this":
+                    if(term.jjtGetNumChildren() > 0 && term.jjtGetChild(0).toString().equals("Member"))
+                    {
+                        Node member = term.jjtGetChild(0);
 
+                        if(analyseFunctionCall(member, funcName, true).equals("ok"))
+                        {
+                           
+                        }
+                    } 
+                    else
+                    {
+                        System.out.println("Standalone this is not a boolean term in function " + funcName);
+                        return false;
+                    }
+
+                case "true":
+                case "false":
+                    return true;
+                        
+                default:
+
+                    try
+                    {
+                        Integer.parseInt(term.getName());
+                        
+                        System.out.println("Integer is not a boolean term: function + " + funcName);
+                        return false;
+                    }
+                    catch(NumberFormatException e)
+                    {
+                        String varType = analyseIdentifier(term, funcName, true);
+
+                        if(!varType.equals("boolean") && !varType.equals("all"))
+                        {
+                            System.out.println("Variable " + term.getName() + " isn't a boolean in function " + funcName);
+                            return false;
+                        }
+                        else
+                            return true;
+                        
+                    }
             }
         }
         else
         {
+            if(term.jjtGetNumChildren() != 0)
+            {
+                switch(term.jjtGetChild(0).toString())
+                {
+                    case "ENCLOSED_EXPR":
+                        return evaluatesToBoolean(term.jjtGetChild(0), funcName);
 
+                    case "NEW":
+                        System.out.println("New token doesn't evaluate to boolean in function " + funcName);
+                        return false;
+
+                    default:
+                        System.out.println("Unexpected token in boolean term analysis: " + term.jjtGetChild(0).toString() + " in function " + funcName);
+                        return false;
+                }
+            }
+            else
+            {
+                System.out.println("Empty expression is not a boolean in function " + funcName);
+                return false;
+            }
         }
-        
-        return true;
     }
 
-    public static Boolean intTerm(Node term, String funcName)
+    public static boolean intTerm(Node term, String funcName)
     {
         return true;
     }
 
-    public static Boolean buildSymbolTables(SimpleNode root)
+    public static String analyseFunctionCall(Node member, String funcName, boolean ownFunc)
+    {
+        SymbolTable funcST = symbolTables.get(member.getName());
+        
+        if(funcST == null)
+        {
+            if(ownFunc)
+            {
+                System.out.println("Couldn't find class function " + member.getName() + " in function " + funcName);
+                return "error";
+            }
+            else
+                return "all"; //Assume the result is what we wanted
+        }
+
+        //TODO complete
+
+        return "ok";
+    }
+
+    //Returns the type of variable
+    public static String analyseIdentifier(Node identifier, String funcName, boolean mustBeInit)
+    {
+        SymbolTable funcST = symbolTables.get(funcName);
+        Symbol variable;
+
+        if(funcST != null)
+        {
+            variable = funcST.getTable().get(identifier.getName());
+
+            if(variable == null)
+            {
+                variable = funcST.getArgs().get(identifier.getName());
+
+                if(variable == null)
+                {
+                    SymbolTable classST = symbolTables.get(className);
+
+                    if(classST != null)
+                    {
+                        variable = classST.getTable().get(identifier.getName());
+                    }
+                    else
+                    {
+                        System.out.println("Couldn't find class " + className + " symbol table in funtion" + funcName);
+                        return "error";
+                    }
+                }
+            }
+
+            if(variable != null)
+            {
+                if(mustBeInit && !variable.getInit())
+                {
+                    System.out.println("Variable " + variable.getName() + " was not initialized in function " + funcName);
+                    return "error";
+                }
+                else
+                {
+                    if(identifier.jjtGetNumChildren() == 1)
+                    {
+                        switch(identifier.jjtGetChild(0).toString())
+                        {
+                            case "Member":
+                                return analyseFunctionCall(identifier.jjtGetChild(0), funcName, false); 
+
+                            case "ArrayAccs":
+                                if(analyseArrayAccs(identifier.jjtGetChild(0), funcName))
+                                    return "int";
+                                else
+                                {
+                                    System.out.println("Array access expression doesn't equal to integer value in function" + funcName);
+                                    return "error";
+                                }
+                                    
+                            default:
+                                System.out.println("Unexpected Term child " + identifier.jjtGetChild(0) + " in function " + funcName);
+                                return "error";
+                        }  
+                    }
+                    else
+                        return variable.getType();
+                }
+            }
+            else
+            {
+                
+                System.out.println("Couldn't find variable " + identifier.getName() + " in function " + funcName);
+                return "error";
+            }
+        }
+        else
+        {
+            System.out.println("Couldn't find function " + funcName + " in variable analysis");
+            return "error";
+        }
+    }
+
+    public static boolean analyseArrayAccs(Node arrayAcs, String funcName)
+    {
+        if(arrayAcs.jjtGetNumChildren() != 1)
+        {
+            System.out.println("Array Access doesn't has expression associated");
+            return false;
+        }
+
+        return evaluatesToInt(arrayAcs.jjtGetChild(0), funcName);
+    }
+
+    public static boolean buildSymbolTables(SimpleNode root)
     {
         Node classNode;
 
@@ -211,7 +418,7 @@ class JavaMMMain
             {
                 if(classNode.toString().equals("Class"))
                 {
-                    Boolean builtSymbolTable;
+                    boolean builtSymbolTable;
 
                     symbolTables.put(classNode.getName(), new SymbolTable());
                     className = classNode.getName();
