@@ -218,6 +218,83 @@ class JavaMMMain
         }
     }
 
+    public static boolean evaluatesToClass(Node expression, String funcName, String classType)
+    {
+        if(!expression.toString().equals("TERM"))
+            return false;
+
+        if(expression.jjtGetNumChildren() != 0) //Might be a function call or a new object
+        {
+            if(expression.jjtGetChild(0).toString().equals("NEW"))
+            {
+                if(!expression.jjtGetChild(0).getType().equals("int[]"))
+                {   
+                    if(expression.jjtGetChild(0).jjtGetNumChildren() == 0)
+                        return expression.jjtGetChild(0).getType().equals(classType);
+                    else
+                    {
+                        if(expression.jjtGetChild(0).jjtGetChild(0).toString().equals("Member"))
+                        {
+                            String type = analyseFunctionCall(expression.jjtGetChild(0).jjtGetChild(0), funcName, 
+                                expression.jjtGetChild(0));
+
+                            return type.equals(classType) || type.equals("all");
+                        }
+                        else
+                            return false;
+                    }
+                }  
+                else
+                    return false;
+            }
+            else
+                if(expression.jjtGetChild(0).toString().equals("Member"))
+                {
+                    String type = analyseFunctionCall(expression.jjtGetChild(0).jjtGetChild(0), funcName, 
+                        expression.jjtGetChild(0)); 
+
+                    return type.equals(classType) || type.equals("all");
+                }
+                else
+                    return false;
+        }
+        else
+        {
+            String name = expression.getName();
+
+            if(name == null)
+                return false;
+
+            switch (name) 
+            {
+                case "this":
+                    return className.equals(classType);
+                case "true":
+                case "false":
+                    return false;
+
+                default:
+
+                    try 
+                    {
+                        Integer.parseInt(name);
+                        return false;
+                    } 
+                    catch (NumberFormatException e) 
+                    {
+                        String varType = analyseIdentifier(expression, funcName, true);
+
+                        return varType.equals(classType) || varType.equals("all");
+                    }
+            }
+        }
+    } 
+
+    public static boolean evaluatesToArray(Node expression, String funcName)
+    {
+        return true;
+    }
+
     public static boolean booleanTerm(Node term, String funcName)
     {
         if(term.getName() != null)
@@ -228,11 +305,10 @@ class JavaMMMain
                     if(term.jjtGetNumChildren() > 0 && term.jjtGetChild(0).toString().equals("Member"))
                     {
                         Node member = term.jjtGetChild(0);
+                        String returnType = analyseFunctionCall(member, funcName, term);
 
-                        if(analyseFunctionCall(member, funcName, true).equals("ok"))
-                        {
-                           
-                        }
+                        if(returnType.equals("boolean") || returnType.equals("all"))
+                            return true;
                     } 
                     else
                     {
@@ -263,8 +339,14 @@ class JavaMMMain
                             return false;
                         }
                         else
-                            return true;
-                        
+                            if(term.jjtGetNumChildren() > 0)
+                            {
+                                String type =  analyseFollowUpTerm(term.jjtGetChild(0), funcName, term);
+
+                                return type.equals("boolean") || type.equals("all");
+                            }
+                            else
+                                return false;
                     }
             }
         }
@@ -277,10 +359,17 @@ class JavaMMMain
                     case "ENCLOSED_EXPR":
                         return evaluatesToBoolean(term.jjtGetChild(0), funcName);
 
-                    case "NEW":
-                        System.out.println("New token doesn't evaluate to boolean in function " + funcName);
-                        return false;
+                    case "NEW": //Mudar para ver casos new Class().someFunc()
+                        String type = analyseFollowUpTerm(term.jjtGetChild(0), funcName, term);
 
+                        if(type.equals("boolean") || type.equals("all"))
+                            return true;
+                        else
+                        {
+                            System.out.println("New token doesn't evaluate to boolean in function " + funcName);
+                            return false;
+                        }
+                        
                     default:
                         System.out.println("Unexpected token in boolean term analysis: " + term.jjtGetChild(0).toString() + " in function " + funcName);
                         return false;
@@ -299,8 +388,25 @@ class JavaMMMain
         return true;
     }
 
-    public static String analyseFunctionCall(Node member, String funcName, boolean ownFunc)
+    public static String analyseFollowUpTerm(Node followUpTerm, String funcName, Node parentNode)
     {
+        switch(followUpTerm.toString())
+        {
+            case "ArrayAccs":
+                return "int";
+
+            case "Member":
+                return analyseFunctionCall(followUpTerm, funcName, parentNode);
+
+            default:
+                System.out.println("Unexpected follow up term " + followUpTerm.toString() + " in function " + funcName);
+                return "error";
+        }
+    }
+
+    public static String analyseFunctionCall(Node member, String funcName, Node parentNode)
+    {
+        boolean ownFunc = isOwnClassVar(parentNode, funcName);
         SymbolTable funcST = symbolTables.get(member.getName());
         
         if(funcST == null)
@@ -314,9 +420,44 @@ class JavaMMMain
                 return "all"; //Assume the result is what we wanted
         }
 
-        //TODO complete
+        String[] argProtos = funcST.getArgsList();
+        boolean isOfSameType;
 
-        return "ok";
+        if(argProtos.length != member.jjtGetNumChildren())
+        {
+            System.out.println("Number of arguments mismatch in member call in fucntion " + funcName);
+            return "error";
+        }
+
+        for(int i = 0; i < argProtos.length && i <  member.jjtGetNumChildren(); i++)
+        {
+            switch(argProtos[i])
+            {
+                case "int":
+                    isOfSameType = evaluatesToInt(member.jjtGetChild(i), funcName);
+                    break;
+
+                case "int[]":
+                    isOfSameType = evaluatesToArray(member.jjtGetChild(i), funcName);
+                    break;
+
+                case "boolean":
+                    isOfSameType = evaluatesToBoolean(member.jjtGetChild(i), funcName);
+                    break;
+
+                default: //Class
+                    isOfSameType = evaluatesToClass(member.jjtGetChild(i), funcName, argProtos[i]);
+            }
+
+            if(!isOfSameType)
+            {
+                System.out.println("Call to function " + member.getName() + " in function " + funcName 
+                + " doesn't match function prototype");
+                return "error";
+            }
+        }
+        
+        return funcST.getReturnType();
     }
 
     //Returns the type of variable
@@ -363,7 +504,7 @@ class JavaMMMain
                         switch(identifier.jjtGetChild(0).toString())
                         {
                             case "Member":
-                                return analyseFunctionCall(identifier.jjtGetChild(0), funcName, false); 
+                                return analyseFunctionCall(identifier.jjtGetChild(0), funcName, identifier); 
 
                             case "ArrayAccs":
                                 if(analyseArrayAccs(identifier.jjtGetChild(0), funcName))
@@ -406,6 +547,23 @@ class JavaMMMain
         }
 
         return evaluatesToInt(arrayAcs.jjtGetChild(0), funcName);
+    }
+
+    public static boolean isOwnClassVar(Node term, String funcName)
+    {
+        if(term.getName() != null)
+        {
+            if(term.getName().equals("this"))
+                return true;
+            else
+            {
+                String type = analyseIdentifier(term, funcName, true);
+
+                return type.equals(className) || type.equals("all");
+            }
+        }
+        else
+            return false;
     }
 
     public static boolean buildSymbolTables(SimpleNode root)

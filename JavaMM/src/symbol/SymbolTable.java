@@ -52,11 +52,6 @@ public class SymbolTable
             return false;
     }
 
-    public boolean checkArgs(Node member)
-    {
-        return true;
-    }
-
     public void printTable()
     {
         Set<String> tableKeys;
@@ -97,6 +92,23 @@ public class SymbolTable
     public LinkedHashMap<String, Symbol> getArgs()
     {
         return args;
+    }
+
+    public String[] getArgsList()
+    {
+        String[] argsList = new String[this.args.size()];
+        Set<Entry<String, Symbol>> argsSet = args.entrySet();
+        Iterator<Entry<String, Symbol>> argsIterator = argsSet.iterator();
+
+        for(int i = 0; argsIterator.hasNext(); i++)
+            argsList[i] = argsIterator.next().getValue().getType();
+
+        return argsList;
+    }
+
+    public String getReturnType()
+    {
+        return returnType;
     }
 
     public void setReturnType(String returnType)
