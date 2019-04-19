@@ -73,7 +73,16 @@ class JavaMMMain
             else
             {
                 if(func.jjtGetChild(i).toString().equals("Return"))
-                    return isTheSameType(evaluatesTo(func.jjtGetChild(i).jjtGetChild(0), func.getName()), func.getReturnType());
+                {
+                    if(!isTheSameType(evaluatesTo(func.jjtGetChild(i).jjtGetChild(0), func.getName()), func.getReturnType()))
+                    {
+                        System.out.println("Return value in function " + func.getName() + " does not meet function prototype");
+                        return false;
+                    }
+                    else
+                        return true;
+
+                }
                 else
                 {
                     if(!analyseStatement(func.jjtGetChild(i), func.getName()))
@@ -143,7 +152,7 @@ class JavaMMMain
 
     public static boolean analyseIf(Node ifNode, String funcName)
     {
-        if(ifNode.jjtGetNumChildren() < 2)
+        if(ifNode.jjtGetNumChildren() < 3)
         {
             System.out.println("If in " + funcName + " doesn't have enough children");
             return false;
@@ -155,27 +164,35 @@ class JavaMMMain
             return false;
         }
 
-        if(!analyseStatement(ifNode.jjtGetChild(1), funcName))
+        Node then = ifNode.jjtGetChild(1);
+        
+        for(int i = 0; i < then.jjtGetNumChildren(); i++)
         {
-            System.out.println("if 'then' statement is invalid in function " + funcName);
-            return false;
+            if (!analyseStatement(then.jjtGetChild(i), funcName)) 
+            {
+                System.out.println("if 'then' statement is invalid in function " + funcName);
+                return false;
+            }
         }
 
-        if(ifNode.jjtGetNumChildren() == 2)
-            return true;
+        Node elseNode = ifNode.jjtGetChild(2);
 
-        if(!analyseStatement(ifNode.jjtGetChild(2), funcName))
+        for(int i = 0; i < elseNode.jjtGetNumChildren(); i++)
         {
-            System.out.println("if 'else' statement is invalid in function " + funcName);
-            return false;
+            if (!analyseStatement(elseNode.jjtGetChild(i), funcName)) 
+            {
+                System.out.println("if 'then' statement is invalid in function " + funcName);
+                return false;
+            }
         }
-            
+
+        
         return true;
     }
 
     public static boolean analyseWhile(Node whileNode, String funcName)
     {
-        if(whileNode.jjtGetNumChildren() < 1)
+        if(whileNode.jjtGetNumChildren() < 2)
         {
             System.out.println("While in " + funcName + " doesn't have enough children");
             return false;
@@ -187,13 +204,15 @@ class JavaMMMain
             return false;
         }
 
-        if(whileNode.jjtGetNumChildren() == 1)
-            return true;
+        Node then = whileNode.jjtGetChild(1);
 
-        if(!analyseStatement(whileNode.jjtGetChild(1), funcName))
+        for (int i = 0; i < then.jjtGetNumChildren(); i++) 
         {
-            System.out.println("while 'then' statement is invalid in function " + funcName);
-            return false;
+            if (!analyseStatement(then.jjtGetChild(i), funcName)) 
+            {
+                System.out.println("while 'then' statement is invalid in function " + funcName);
+                return false;
+            }
         }
 
         return true;
@@ -201,7 +220,7 @@ class JavaMMMain
 
     public static boolean analyseEquals(Node equals, String funcName)
     {
-        String op1Value = identifierEvaluatesTo(equals.jjtGetChild(0), funcName, false);
+        String op1Value = identifierEvaluatesTo(equals.jjtGetChild(0), funcName, false, false);
         String op2Value = evaluatesTo(equals.jjtGetChild(1), funcName);
 
         if(op1Value.equals("error") || op2Value.equals("error"))
@@ -214,7 +233,9 @@ class JavaMMMain
             return true;
         else
         {
-            System.out.println("Equals operator types don't match in function " + funcName);
+            System.out.println("Equals operator types don't match in function " 
+                + funcName + ": " + op1Value + " vs " + op2Value);
+
             return false;
         }
     }
@@ -307,7 +328,7 @@ class JavaMMMain
                     } //Variable
                     catch(NumberFormatException nfe) 
                     {
-                        value = identifierEvaluatesTo(term, funcName, true);
+                        value = identifierEvaluatesTo(term, funcName, true, false);
 
                         if(value.equals("error"))
                         {
@@ -403,11 +424,12 @@ class JavaMMMain
         switch(termSecondSon.toString())
         {
             case "ArrayAccs":
-                if(isTheSameType(value, "int[]") && analyseArrayAccs(termSecondSon, funcName))
+                if(identifierEvaluatesTo(termSecondSon.jjtGetParent(), funcName, true, true).equals("int[]") 
+                    && analyseArrayAccs(termSecondSon, funcName))
                     return "int";
                 else
                 {
-                    System.out.println("Array access failed in function " + funcName);
+                    System.out.println("Array access failed in function " + funcName + ": " + value);
                     return "error";
                 }
 
@@ -460,7 +482,7 @@ class JavaMMMain
     }
 
     //Returns the type of variable
-    public static String identifierEvaluatesTo(Node identifier, String funcName, boolean mustBeInit)
+    public static String identifierEvaluatesTo(Node identifier, String funcName, boolean mustBeInit, boolean baseTerm)
     {
         SymbolTable symbolTable = symbolTables.get(funcName);
         Symbol variable;
@@ -505,7 +527,7 @@ class JavaMMMain
             }
             else
                 key = funcName;
-
+            
             if(!variable.getInit())
             {
                 if(mustBeInit)
@@ -523,13 +545,15 @@ class JavaMMMain
                         symbolTable.putSymbol(variable);
 
                     symbolTables.put(key, symbolTable);
-
-                    return variable.getType();
                 }
                 
-            }
+            } 
+
+            if(!baseTerm && identifier.jjtGetNumChildren() > 0 && identifier.jjtGetChild(0).toString().equals("ArrayAccs")
+                    && analyseArrayAccs(identifier.jjtGetChild(0), funcName))
+                return "int";
             else
-                return variable.getType();            
+                return variable.getType();
         }
         else
         {
