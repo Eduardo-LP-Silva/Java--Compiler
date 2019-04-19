@@ -24,8 +24,16 @@ class JavaMMMain
         JavaMM parser = new JavaMM(new FileInputStream(args[0]));
         SimpleNode root = parser.Program();
 
+        System.out.println("Syntax analisys done");
+
         if(buildSymbolTables(root))
-            semanticAnalysis(root);
+        {
+            System.out.println("Symbol tables built");
+
+            if(semanticAnalysis(root))
+                System.out.println("Semantic analysis complete");
+        }
+            
     }
 
     public static boolean semanticAnalysis(SimpleNode root)
@@ -123,7 +131,7 @@ class JavaMMMain
             return false;
         }
 
-        if(!evaluatesToBoolean(ifNode.jjtGetChild(0), funcName))
+        if(!evaluatesTo(ifNode.jjtGetChild(0), funcName).equals("boolean"))
         {
             System.out.println("if condition in function " + funcName + " doesn't evaluate to a boolean");
             return false;
@@ -159,254 +167,212 @@ class JavaMMMain
         return true;
     }
 
-    public static boolean evaluatesToBoolean(Node expression, String funcName)
+    public static boolean isTheSameType(String type1, String type2)
+    {
+        return type1.equals(type2) || type1.equals("all") || type2.equals("all");
+    }
+
+    public static String evaluatesTo(Node expression, String funcName)
     {
         switch(expression.toString())
         {
-            case "AND":
-                return expression.jjtGetNumChildren() == 2 
-                && evaluatesToBoolean(expression.jjtGetChild(0), funcName) 
-                && evaluatesToBoolean(expression.jjtGetChild(1), funcName);
-
-            case "NOT":
-                return expression.jjtGetNumChildren() == 1 && evaluatesToBoolean(expression.jjtGetChild(0), funcName);
-
-            case "LOWER":
-                return expression.jjtGetNumChildren() == 2 
-                && evaluatesToInt(expression.jjtGetChild(0), funcName) 
-                && evaluatesToInt(expression.jjtGetChild(1), funcName);
-
-            case "TERM":
-                return booleanTerm(expression, funcName);
-
             case "ADD":
             case "SUB":
-            case "MUL":
             case "DIV":
-                System.out.println("Expression evaluates to arithmetic value instead of boolean in function " + funcName);
-                return false;
-
-            default:
-                System.out.println("Unexpected token in " + funcName + "'s boolean condition evaluation: " + expression.toString());
-                return false;
-        }
-    }
-
-    public static boolean evaluatesToInt(Node expression, String funcName)
-    {
-        switch(expression.toString())
-        {
+            case "MUL":
+                if(expression.jjtGetNumChildren() == 2 
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "int")
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "int"))
+                    return "int";
+                else
+                {
+                    System.out.println("Operand(s) in expression of type " + expression.toString() 
+                        + " don't evaluate to integers in function " + funcName);
+                    return "error";
+                }
+                    
+            
             case "AND":
+                if(expression.jjtGetNumChildren() == 2 
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "boolean")
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "boolean"))
+                    return "boolean";
+                else
+                {
+                    System.out.println("Operand(s) in expression of type AND don't evaluate to booleans in function " 
+                        + funcName);
+                    return "error";
+                }
+                    
+
             case "LOWER":
-                System.out.println("Expression evaluates to integer value insead of boolean in function " + funcName);
-                return false;
+                if(expression.jjtGetNumChildren() == 2 
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "int")
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "int"))
+                    return "boolean";
+                else
+                {
+                    System.out.println("Operand(s) in expression of type LOWER don't evaluate to integers in function " 
+                        + funcName);
+                    return "error";
+                }
+                    
 
             case "TERM":
-                return intTerm(expression, funcName);
-
-            case "ADD":
-            case "SUB":
-            case "MUL":
-            case "DIV":
-                return expression.jjtGetNumChildren() == 2 
-                && evaluatesToInt(expression.jjtGetChild(0), funcName) 
-                && evaluatesToInt(expression.jjtGetChild(1), funcName);
+                return termEvaluatesTo(expression, funcName);
 
             default:
-                System.out.println("Unexpected token in " + funcName + "'s integer condition evaluation: " + expression.toString());
-                return false;
-        }
-    }
-
-    public static boolean evaluatesToClass(Node expression, String funcName, String classType)
-    {
-        if(!expression.toString().equals("TERM"))
-            return false;
-
-        if(expression.jjtGetNumChildren() != 0) //Might be a function call or a new object
-        {
-            if(expression.jjtGetChild(0).toString().equals("NEW"))
-            {
-                if(!expression.jjtGetChild(0).getType().equals("int[]"))
-                {   
-                    if(expression.jjtGetChild(0).jjtGetNumChildren() == 0)
-                        return expression.jjtGetChild(0).getType().equals(classType);
-                    else
-                    {
-                        if(expression.jjtGetChild(0).jjtGetChild(0).toString().equals("Member"))
-                        {
-                            String type = analyseFunctionCall(expression.jjtGetChild(0).jjtGetChild(0), funcName, 
-                                expression.jjtGetChild(0));
-
-                            return type.equals(classType) || type.equals("all");
-                        }
-                        else
-                            return false;
-                    }
-                }  
-                else
-                    return false;
-            }
-            else
-                if(expression.jjtGetChild(0).toString().equals("Member"))
-                {
-                    String type = analyseFunctionCall(expression.jjtGetChild(0).jjtGetChild(0), funcName, 
-                        expression.jjtGetChild(0)); 
-
-                    return type.equals(classType) || type.equals("all");
-                }
-                else
-                    return false;
-        }
-        else
-        {
-            String name = expression.getName();
-
-            if(name == null)
-                return false;
-
-            switch (name) 
-            {
-                case "this":
-                    return className.equals(classType);
-                case "true":
-                case "false":
-                    return false;
-
-                default:
-
-                    try 
-                    {
-                        Integer.parseInt(name);
-                        return false;
-                    } 
-                    catch (NumberFormatException e) 
-                    {
-                        String varType = analyseIdentifier(expression, funcName, true);
-
-                        return varType.equals(classType) || varType.equals("all");
-                    }
-            }
-        }
-    } 
-
-    public static boolean evaluatesToArray(Node expression, String funcName)
-    {
-        return true;
-    }
-
-    public static boolean booleanTerm(Node term, String funcName)
-    {
-        if(term.getName() != null)
-        {
-            switch(term.getName())
-            {
-                case "this":
-                    if(term.jjtGetNumChildren() > 0 && term.jjtGetChild(0).toString().equals("Member"))
-                    {
-                        Node member = term.jjtGetChild(0);
-                        String returnType = analyseFunctionCall(member, funcName, term);
-
-                        if(returnType.equals("boolean") || returnType.equals("all"))
-                            return true;
-                    } 
-                    else
-                    {
-                        System.out.println("Standalone this is not a boolean term in function " + funcName);
-                        return false;
-                    }
-
-                case "true":
-                case "false":
-                    return true;
-                        
-                default:
-
-                    try
-                    {
-                        Integer.parseInt(term.getName());
-                        
-                        System.out.println("Integer is not a boolean term: function + " + funcName);
-                        return false;
-                    }
-                    catch(NumberFormatException e)
-                    {
-                        String varType = analyseIdentifier(term, funcName, true);
-
-                        if(!varType.equals("boolean") && !varType.equals("all"))
-                        {
-                            System.out.println("Variable " + term.getName() + " isn't a boolean in function " + funcName);
-                            return false;
-                        }
-                        else
-                            if(term.jjtGetNumChildren() > 0)
-                            {
-                                String type =  analyseFollowUpTerm(term.jjtGetChild(0), funcName, term);
-
-                                return type.equals("boolean") || type.equals("all");
-                            }
-                            else
-                                return false;
-                    }
-            }
-        }
-        else
-        {
-            if(term.jjtGetNumChildren() != 0)
-            {
-                switch(term.jjtGetChild(0).toString())
-                {
-                    case "ENCLOSED_EXPR":
-                        return evaluatesToBoolean(term.jjtGetChild(0), funcName);
-
-                    case "NEW": //Mudar para ver casos new Class().someFunc()
-                        String type = analyseFollowUpTerm(term.jjtGetChild(0), funcName, term);
-
-                        if(type.equals("boolean") || type.equals("all"))
-                            return true;
-                        else
-                        {
-                            System.out.println("New token doesn't evaluate to boolean in function " + funcName);
-                            return false;
-                        }
-                        
-                    default:
-                        System.out.println("Unexpected token in boolean term analysis: " + term.jjtGetChild(0).toString() + " in function " + funcName);
-                        return false;
-                }
-            }
-            else
-            {
-                System.out.println("Empty expression is not a boolean in function " + funcName);
-                return false;
-            }
-        }
-    }
-
-    public static boolean intTerm(Node term, String funcName)
-    {
-        return true;
-    }
-
-    public static String analyseFollowUpTerm(Node followUpTerm, String funcName, Node parentNode)
-    {
-        switch(followUpTerm.toString())
-        {
-            case "ArrayAccs":
-                return "int";
-
-            case "Member":
-                return analyseFunctionCall(followUpTerm, funcName, parentNode);
-
-            default:
-                System.out.println("Unexpected follow up term " + followUpTerm.toString() + " in function " + funcName);
+                System.out.println("Unexpected token to evaluate in function " + funcName + ": " + expression.toString());
                 return "error";
         }
     }
 
-    public static String analyseFunctionCall(Node member, String funcName, Node parentNode)
+    public static String termEvaluatesTo(Node term, String funcName)
     {
-        boolean ownFunc = isOwnClassVar(parentNode, funcName);
+        String termName = term.getName();
+        String value = "";
+
+        if(termName != null)
+        {
+            switch(termName)
+            {
+                case "true":
+                case "false":
+                    value = "boolean";
+                    break;
+
+                case "this":
+                    value = className;
+                    break;
+
+                default:
+
+                    try
+                    {
+                        Integer.parseInt(termName); //Integer
+                        
+                        return "int";
+                    } //Variable
+                    catch(NumberFormatException nfe) 
+                    {
+                        value = identifierEvaluatesTo(term, funcName, true);
+
+                        if(value.equals("error"))
+                        {
+                            System.out.println("Unexpected term in term evaluation in function " + funcName + ": " 
+                                + termName);
+
+                            return "error";
+                        }
+                    }
+            }
+        }
+
+        if(term.jjtGetNumChildren() == 0)
+        {
+            if(termName == null)
+            {
+                System.out.println("Term has no name nor the expected number of children in function " + funcName 
+                    + ": " + term.toString());
+
+                return "error";
+            }
+            
+            return value;
+        }
+
+        Node termSon = term.jjtGetChild(0);
+        boolean noNewNorEnclosedExpr = false;
+
+        switch(termSon.toString())
+        {
+            case "ENCLOSED_EXPR":
+                if(termSon.jjtGetNumChildren() != 0)
+                {
+                    value = evaluatesTo(termSon.jjtGetChild(0), funcName);
+                    break;
+                }
+                else
+                {
+                    System.out.println("Enclosed expression is childless");
+                    return  "error";
+                }
+                    
+            case "NEW":
+                if(termSon.jjtGetNumChildren() == 0) //New object
+                {
+                    value = termSon.getType();
+                    break;
+                }
+                else
+                {
+                    Node arrayAcces = termSon.jjtGetChild(0);
+
+                    if(analyseArrayAccs(arrayAcces, funcName))
+                    {
+                        value = "int[]";
+                        break;
+                    }
+                    else
+                    {
+                        System.out.println("Array initialization failed in function " + funcName);
+                        return "error";
+                    }
+                }
+
+            default:
+                noNewNorEnclosedExpr = true;
+        }
+        
+        int childIndex;
+
+        if(term.jjtGetNumChildren() == 1)
+        {
+            if(!noNewNorEnclosedExpr)
+                return value;
+            else
+                childIndex = 0;
+        }
+        else
+        {
+            if(noNewNorEnclosedExpr)
+            {
+                System.out.println("Unknown term child in term evaluation in function " + funcName + ": " 
+                    + termSon.toString());
+                
+                return "error";
+            }
+            else
+                childIndex = 1;
+        } 
+            
+        Node termSecondSon = term.jjtGetChild(childIndex);
+
+        switch(termSecondSon.toString())
+        {
+            case "ArrayAccs":
+                if(isTheSameType(value, "int[]") && analyseArrayAccs(termSecondSon, funcName))
+                    return "int";
+                else
+                {
+                    System.out.println("Array access failed in function " + funcName);
+                    return "error";
+                }
+
+            case "Member":
+                return analyseFunctionCall(termSecondSon, funcName, value);
+
+            default:
+                System.out.println("Unexpected term's second son in term evaluation in function " + funcName 
+                    + ": " + termSecondSon.toString());
+
+                return "error";
+        }
+    }
+
+    public static String analyseFunctionCall(Node member, String funcName, String callerType)
+    {
+        boolean ownFunc = isTheSameType(callerType, className);
         SymbolTable funcST = symbolTables.get(member.getName());
         
         if(funcST == null)
@@ -421,7 +387,6 @@ class JavaMMMain
         }
 
         String[] argProtos = funcST.getArgsList();
-        boolean isOfSameType;
 
         if(argProtos.length != member.jjtGetNumChildren())
         {
@@ -431,25 +396,7 @@ class JavaMMMain
 
         for(int i = 0; i < argProtos.length && i <  member.jjtGetNumChildren(); i++)
         {
-            switch(argProtos[i])
-            {
-                case "int":
-                    isOfSameType = evaluatesToInt(member.jjtGetChild(i), funcName);
-                    break;
-
-                case "int[]":
-                    isOfSameType = evaluatesToArray(member.jjtGetChild(i), funcName);
-                    break;
-
-                case "boolean":
-                    isOfSameType = evaluatesToBoolean(member.jjtGetChild(i), funcName);
-                    break;
-
-                default: //Class
-                    isOfSameType = evaluatesToClass(member.jjtGetChild(i), funcName, argProtos[i]);
-            }
-
-            if(!isOfSameType)
+            if(!argProtos[i].equals(evaluatesTo(member.jjtGetChild(i), funcName)))
             {
                 System.out.println("Call to function " + member.getName() + " in function " + funcName 
                 + " doesn't match function prototype");
@@ -461,7 +408,7 @@ class JavaMMMain
     }
 
     //Returns the type of variable
-    public static String analyseIdentifier(Node identifier, String funcName, boolean mustBeInit)
+    public static String identifierEvaluatesTo(Node identifier, String funcName, boolean mustBeInit)
     {
         SymbolTable funcST = symbolTables.get(funcName);
         Symbol variable;
@@ -481,6 +428,12 @@ class JavaMMMain
                     if(classST != null)
                     {
                         variable = classST.getTable().get(identifier.getName());
+
+                        if(variable == null)
+                        {
+                            System.out.println("Couldn't find variable " + variable + " in function " + funcName);
+                            return "error";
+                        }
                     }
                     else
                     {
@@ -490,46 +443,13 @@ class JavaMMMain
                 }
             }
 
-            if(variable != null)
+            if(mustBeInit && !variable.getInit())
             {
-                if(mustBeInit && !variable.getInit())
-                {
-                    System.out.println("Variable " + variable.getName() + " was not initialized in function " + funcName);
-                    return "error";
-                }
-                else
-                {
-                    if(identifier.jjtGetNumChildren() == 1)
-                    {
-                        switch(identifier.jjtGetChild(0).toString())
-                        {
-                            case "Member":
-                                return analyseFunctionCall(identifier.jjtGetChild(0), funcName, identifier); 
-
-                            case "ArrayAccs":
-                                if(analyseArrayAccs(identifier.jjtGetChild(0), funcName))
-                                    return "int";
-                                else
-                                {
-                                    System.out.println("Array access expression doesn't equal to integer value in function" + funcName);
-                                    return "error";
-                                }
-                                    
-                            default:
-                                System.out.println("Unexpected Term child " + identifier.jjtGetChild(0) + " in function " + funcName);
-                                return "error";
-                        }  
-                    }
-                    else
-                        return variable.getType();
-                }
-            }
-            else
-            {
-                
-                System.out.println("Couldn't find variable " + identifier.getName() + " in function " + funcName);
+                System.out.println("Variable " + variable.getName() + " was not initialized in function " + funcName);
                 return "error";
             }
+            else
+                return variable.getType();            
         }
         else
         {
@@ -546,24 +466,7 @@ class JavaMMMain
             return false;
         }
 
-        return evaluatesToInt(arrayAcs.jjtGetChild(0), funcName);
-    }
-
-    public static boolean isOwnClassVar(Node term, String funcName)
-    {
-        if(term.getName() != null)
-        {
-            if(term.getName().equals("this"))
-                return true;
-            else
-            {
-                String type = analyseIdentifier(term, funcName, true);
-
-                return type.equals(className) || type.equals("all");
-            }
-        }
-        else
-            return false;
+        return evaluatesTo(arrayAcs.jjtGetChild(0), funcName).equals("int");
     }
 
     public static boolean buildSymbolTables(SimpleNode root)
