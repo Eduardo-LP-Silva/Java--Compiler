@@ -18,16 +18,18 @@ public interface JavaMMTreeConstants
   public int JJTWHILE = 11;
   public int JJTIF = 12;
   public int JJTELSE = 13;
-  public int JJTMEMBER = 14;
-  public int JJTARRAYACCS = 15;
-  public int JJTAND = 16;
-  public int JJTLOWER = 17;
-  public int JJTADD = 18;
-  public int JJTSUB = 19;
-  public int JJTMUL = 20;
-  public int JJTDIV = 21;
-  public int JJTNOT = 22;
-  public int JJTENCLOSED_EXPR = 23;
+  public int JJTTHEN = 14;
+  public int JJTMEMBER = 15;
+  public int JJTARRAYACCS = 16;
+  public int JJTAND = 17;
+  public int JJTLOWER = 18;
+  public int JJTADD = 19;
+  public int JJTSUB = 20;
+  public int JJTMUL = 21;
+  public int JJTDIV = 22;
+  public int JJTNOT = 23;
+  public int JJTENCLOSED_EXPR = 24;
+  public int JJTNEW = 25;
 
 
   public String[] jjtNodeName = {
@@ -45,6 +47,7 @@ public interface JavaMMTreeConstants
     "While",
     "If",
     "Else",
+    "Then",
     "Member",
     "ArrayAccs",
     "AND",
@@ -55,6 +58,7 @@ public interface JavaMMTreeConstants
     "DIV",
     "NOT",
     "ENCLOSED_EXPR",
+    "NEW",
   };
 }
-/* JavaCC - OriginalChecksum=640f411346f78310114ecb5d6fdf45e8 (do not edit this line) */
+/* JavaCC - OriginalChecksum=cc35a9f2a15833a18eda7b4c65a48603 (do not edit this line) */

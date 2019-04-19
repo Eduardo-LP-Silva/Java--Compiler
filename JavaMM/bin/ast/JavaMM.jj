@@ -217,11 +217,12 @@ void MainDeclaration()      : {/*@bgen(jjtree) Main */
                                SimpleNode jjtn000 = new SimpleNode(JJTMAIN);
                                boolean jjtc000 = true;
                                jjtree.openNodeScope(jjtn000);
-/*@egen*/Token n;}
+/*@egen*/Token n, t;}
 {/*@bgen(jjtree) Main */
     try {
 /*@egen*/
-    <STAT> <VOID> <MAIN> <LPAREN> <STRING> <LBRACK> <RBRACK> n=<IDENTIFIER> {jjtn000.name = n.image;} <RPAREN> 
+    <STAT> <VOID> n=<MAIN> {jjtn000.name = n.image;} <LPAREN> <STRING> <LBRACK> <RBRACK> 
+    t=<IDENTIFIER> {jjtn000.type = t.image;} <RPAREN> 
     <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -447,7 +448,7 @@ void While(): {/*@bgen(jjtree) While */
         error_skip_to(RPAREN);
     }
 
-    Statement()/*@bgen(jjtree)*/
+    Then()/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -478,7 +479,7 @@ void If(): {/*@bgen(jjtree) If */
 {/*@bgen(jjtree) If */
     try {
 /*@egen*/
-    <IF> <LPAREN> Expression() <RPAREN> Statement() Else()/*@bgen(jjtree)*/
+    <IF> <LPAREN> Expression() <RPAREN> Then() Else()/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -510,6 +511,37 @@ void Else(): {/*@bgen(jjtree) Else */
     try {
 /*@egen*/
     <ELSE> Statement()/*@bgen(jjtree)*/
+    } catch (Throwable jjte000) {
+      if (jjtc000) {
+        jjtree.clearNodeScope(jjtn000);
+        jjtc000 = false;
+      } else {
+        jjtree.popNode();
+      }
+      if (jjte000 instanceof RuntimeException) {
+        throw (RuntimeException)jjte000;
+      }
+      if (jjte000 instanceof ParseException) {
+        throw (ParseException)jjte000;
+      }
+      throw (Error)jjte000;
+    } finally {
+      if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+/*@egen*/
+}
+
+void Then(): {/*@bgen(jjtree) Then */
+  SimpleNode jjtn000 = new SimpleNode(JJTTHEN);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+/*@egen*/}
+{/*@bgen(jjtree) Then */
+    try {
+/*@egen*/
+    Statement()/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -1106,8 +1138,7 @@ void EXPR_6()      : {/*@bgen(jjtree) TERM */
                  }
                }
 /*@egen*/                <RPAREN>
-    | <NEW> (n=<IDENTIFIER> {jjtn000.name = "new " + n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtn000.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    | NEW())
     [EXPR_7()]/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -1171,8 +1202,7 @@ void EXPR_6_NO_ID()      : {/*@bgen(jjtree) TERM */
                  }
                }
 /*@egen*/                <RPAREN>
-    | <NEW> (n=<IDENTIFIER> {jjtn000.name = "new " + n.image;} <LPAREN> <RPAREN> 
-        | <INT> {jjtn000.type = "int[]";} <LBRACK> Expression() <RBRACK>))
+    | NEW())
     [EXPR_7()]/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -1202,6 +1232,38 @@ void EXPR_7()      : {}
     | Member()
 }
 
+void NEW(): {/*@bgen(jjtree) NEW */
+             SimpleNode jjtn000 = new SimpleNode(JJTNEW);
+             boolean jjtc000 = true;
+             jjtree.openNodeScope(jjtn000);
+/*@egen*/Token n;}
+{/*@bgen(jjtree) NEW */
+    try {
+/*@egen*/
+    <NEW> (n=<IDENTIFIER> {jjtn000.type = n.image;} <LPAREN> <RPAREN> 
+        | n=<INT> {jjtn000.type = "int[]";} ArrayAccs())/*@bgen(jjtree)*/
+    } catch (Throwable jjte000) {
+      if (jjtc000) {
+        jjtree.clearNodeScope(jjtn000);
+        jjtc000 = false;
+      } else {
+        jjtree.popNode();
+      }
+      if (jjte000 instanceof RuntimeException) {
+        throw (RuntimeException)jjte000;
+      }
+      if (jjte000 instanceof ParseException) {
+        throw (ParseException)jjte000;
+      }
+      throw (Error)jjte000;
+    } finally {
+      if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+/*@egen*/
+}
+
 JAVACODE
 void error_skip_to(int kind)      
 {
@@ -1212,4 +1274,4 @@ void error_skip_to(int kind)
       t = getNextToken();
     } 
     while (t.kind != kind);
-  }
+}

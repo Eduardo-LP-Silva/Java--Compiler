@@ -29,6 +29,7 @@ class JavaMMMain
         if(buildSymbolTables(root))
         {
             System.out.println("Symbol tables built");
+            //printSymbolTables();
 
             if(semanticAnalysis(root))
                 System.out.println("Semantic analysis complete");
@@ -70,11 +71,19 @@ class JavaMMMain
             if(func.jjtGetChild(i).toString().equals("Var") || func.jjtGetChild(i).toString().equals("Arg"))
                 continue;
             else
-                if(!analyseStatement(func.jjtGetChild(i), func.getName()))
+            {
+                if(func.jjtGetChild(i).toString().equals("Return"))
+                    return isTheSameType(evaluatesTo(func.jjtGetChild(i).jjtGetChild(0), func.getName()), func.getReturnType());
+                else
                 {
-                    System.out.println("Error in function " + func.getName() + " statement(s)");
-                    return false;
-                }    
+                    if(!analyseStatement(func.jjtGetChild(i), func.getName()))
+                    {
+                        System.out.println("Error in function " + func.getName() + " statement(s)");
+                        return false;
+                    }   
+                }
+            }
+                 
         }
 
         return true;
@@ -94,12 +103,21 @@ class JavaMMMain
                 continueAnalysis = analyseWhile(statement, funcName);
                 break;
 
-            case "TERM": // Verify standalone terms
-                continueAnalysis = analyseStandAloneTerm(statement, funcName);
+            case "TERM":
+                continueAnalysis = !termEvaluatesTo(statement, funcName).equals("error");
                 break;
 
             case "EQUALS":
                 continueAnalysis = analyseEquals(statement, funcName);
+                break;
+
+            case "Else":
+            case "Then":
+                if(statement.jjtGetNumChildren() == 1)
+                    continueAnalysis = analyseStatement(statement.jjtGetChild(0), funcName);
+                else 
+                    continueAnalysis = true;
+
                 break;
 
             // Standalone arithmetic and boolean expressions not valid (?)
@@ -125,13 +143,13 @@ class JavaMMMain
 
     public static boolean analyseIf(Node ifNode, String funcName)
     {
-        if(ifNode.jjtGetNumChildren() < 3)
+        if(ifNode.jjtGetNumChildren() < 2)
         {
             System.out.println("If in " + funcName + " doesn't have enough children");
             return false;
         }
 
-        if(!evaluatesTo(ifNode.jjtGetChild(0), funcName).equals("boolean"))
+        if(!isTheSameType(evaluatesTo(ifNode.jjtGetChild(0), funcName), "boolean"))
         {
             System.out.println("if condition in function " + funcName + " doesn't evaluate to a boolean");
             return false;
@@ -142,6 +160,9 @@ class JavaMMMain
             System.out.println("if 'then' statement is invalid in function " + funcName);
             return false;
         }
+
+        if(ifNode.jjtGetNumChildren() == 2)
+            return true;
 
         if(!analyseStatement(ifNode.jjtGetChild(2), funcName))
         {
@@ -154,17 +175,48 @@ class JavaMMMain
 
     public static boolean analyseWhile(Node whileNode, String funcName)
     {
-        return true;
-    }
+        if(whileNode.jjtGetNumChildren() < 1)
+        {
+            System.out.println("While in " + funcName + " doesn't have enough children");
+            return false;
+        }
 
-    public static boolean analyseStandAloneTerm(Node term, String funcName)
-    {
+        if(!isTheSameType(evaluatesTo(whileNode.jjtGetChild(0), funcName), "boolean"))
+        {
+            System.out.println("while condition in function " + funcName + " doesn't evaluate to a boolean");
+            return false;
+        }
+
+        if(whileNode.jjtGetNumChildren() == 1)
+            return true;
+
+        if(!analyseStatement(whileNode.jjtGetChild(1), funcName))
+        {
+            System.out.println("while 'then' statement is invalid in function " + funcName);
+            return false;
+        }
+
         return true;
     }
 
     public static boolean analyseEquals(Node equals, String funcName)
     {
-        return true;
+        String op1Value = identifierEvaluatesTo(equals.jjtGetChild(0), funcName, false);
+        String op2Value = evaluatesTo(equals.jjtGetChild(1), funcName);
+
+        if(op1Value.equals("error") || op2Value.equals("error"))
+        {
+            System.out.println("Error in equals operand(s) in function " + funcName);
+            return false;
+        }
+
+        if(isTheSameType(op1Value, op2Value))
+            return true;
+        else
+        {
+            System.out.println("Equals operator types don't match in function " + funcName);
+            return false;
+        }
     }
 
     public static boolean isTheSameType(String type1, String type2)
@@ -410,28 +462,35 @@ class JavaMMMain
     //Returns the type of variable
     public static String identifierEvaluatesTo(Node identifier, String funcName, boolean mustBeInit)
     {
-        SymbolTable funcST = symbolTables.get(funcName);
+        SymbolTable symbolTable = symbolTables.get(funcName);
         Symbol variable;
+        boolean arg = false;
+        String key;
 
-        if(funcST != null)
+        if(symbolTable != null)
         {
-            variable = funcST.getTable().get(identifier.getName());
+            variable = symbolTable.getTable().get(identifier.getName());
 
             if(variable == null)
             {
-                variable = funcST.getArgs().get(identifier.getName());
+                variable = symbolTable.getArgs().get(identifier.getName());
+                arg = true;
 
                 if(variable == null)
                 {
-                    SymbolTable classST = symbolTables.get(className);
+                    arg = false;
+                    symbolTable = symbolTables.get(className);
+                    key = className;
 
-                    if(classST != null)
+                    if(symbolTable != null)
                     {
-                        variable = classST.getTable().get(identifier.getName());
+                        variable = symbolTable.getTable().get(identifier.getName());
 
                         if(variable == null)
                         {
-                            System.out.println("Couldn't find variable " + variable + " in function " + funcName);
+                            System.out.println("Couldn't find variable " + identifier.getName() 
+                                + " in function " + funcName);
+
                             return "error";
                         }
                     }
@@ -441,12 +500,33 @@ class JavaMMMain
                         return "error";
                     }
                 }
+                else
+                    key = funcName;
             }
+            else
+                key = funcName;
 
-            if(mustBeInit && !variable.getInit())
+            if(!variable.getInit())
             {
-                System.out.println("Variable " + variable.getName() + " was not initialized in function " + funcName);
-                return "error";
+                if(mustBeInit)
+                {
+                    System.out.println("Variable " + variable.getName() + " was not initialized in function " + funcName);
+                    return "error";
+                }
+                else
+                {
+                    variable.setInit(true);
+                    
+                    if(arg)
+                        symbolTable.putArg(variable);
+                    else
+                        symbolTable.putSymbol(variable);
+
+                    symbolTables.put(key, symbolTable);
+
+                    return variable.getType();
+                }
+                
             }
             else
                 return variable.getType();            
@@ -544,6 +624,8 @@ class JavaMMMain
 
         if(var.toString().equals("Arg"))
         {
+            newSymbol.setInit(true);
+            
             if (!classST.putArg(newSymbol))
             {
                 System.out.println("Duplicate argument " + var.getName() + " of type " + var.getType());
@@ -612,7 +694,7 @@ class JavaMMMain
             funcTable = new SymbolTable();
 
         funcTable.setReturnType("void");
-        funcTable.putArg(new Symbol(main.getName(), "String[]")); //Name in main = argument identifier
+        funcTable.putArg(new Symbol(main.getType(), "String[]")); //Type in main = argument identifier
         symbolTables.put("main", funcTable);
 
         for(int i = 0; i < main.jjtGetNumChildren(); i++)

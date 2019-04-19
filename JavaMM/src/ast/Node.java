@@ -4,7 +4,7 @@
    machinery for constructing the parent and child relationships
    between nodes. */
 
-package ast;
+   package ast;
 
 public
 interface Node {
@@ -35,6 +35,7 @@ interface Node {
 
   public int getId();
 
+  
   public String getName();
 
   public String getType();

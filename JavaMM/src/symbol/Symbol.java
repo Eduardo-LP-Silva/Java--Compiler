@@ -37,4 +37,9 @@ public class Symbol
     {
         this.value = value;
     }
+
+    public void setInit(boolean init)
+    {
+        this.init = init;
+    }
 }

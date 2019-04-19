@@ -1,0 +1,23 @@
+class MonteCarloPi 
+{
+	public static void main(String[] args) 
+    {
+		int pi_estimate_times_100;
+
+        pi_estimate_times_100 = 100;
+
+        while(false)
+        {
+          
+        }
+
+        if(pi_estimate_times_100 < 101)
+        {
+            
+        }
+        else
+        {
+
+        }
+	}    
+}

@@ -109,9 +109,10 @@ void VarDeclaration() #Var: {Token n; String t;}
     t=Type() {jjtThis.type = t;} n=<IDENTIFIER> {jjtThis.name = n.image;} <SEMI>  
 }
 
-void MainDeclaration() #Main: {Token n;}
+void MainDeclaration() #Main: {Token n, t;}
 {
-    <STAT> <VOID> <MAIN> <LPAREN> <STRING> <LBRACK> <RBRACK> n=<IDENTIFIER> {jjtThis.name = n.image;} <RPAREN> 
+    <STAT> <VOID> n=<MAIN> {jjtThis.name = n.image;} <LPAREN> <STRING> <LBRACK> <RBRACK> 
+    t=<IDENTIFIER> {jjtThis.type = t.image;} <RPAREN> 
     <LBRACE>  (LOOKAHEAD(2) VarDeclaration())* (Statement())* <RBRACE>  
 }
 
@@ -175,17 +176,22 @@ void While(): {}
         error_skip_to(RPAREN);
     }
 
-    Statement()
+    Then()
 }
 
 void If(): {}
 {
-    <IF> <LPAREN> Expression() <RPAREN> Statement() Else()
+    <IF> <LPAREN> Expression() <RPAREN> Then() Else()
 }
 
 void Else(): {}
 {
     <ELSE> Statement()
+}
+
+void Then(): {}
+{
+    Statement()
 }
 
 void Member(): {Token n;}
