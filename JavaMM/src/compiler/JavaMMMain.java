@@ -5,6 +5,9 @@ import symbol.*;
 import java.util.Hashtable;
 import java.io.FileInputStream;
 import java.util.Set;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.IOException;
 
 
 class JavaMMMain
@@ -35,6 +38,251 @@ class JavaMMMain
                 System.out.println("Semantic analysis complete");
         }
             
+    }
+
+    public PrintWriter getJFile() 
+    {
+        try 
+        {
+            PrintWriter print_writer;
+
+            String filename = "jasmin";
+            File file = new File(filename);
+
+            if(!file.exists())
+                file.mkdirs();
+            
+            File jasmin_file = new File(filename + '/' + "moduleName" + ".j");
+
+            if(!jasmin_file.exists()) 
+                jasmin_file.createNewFile();
+            
+            print_writer = new PrintWriter(jasmin_file);
+
+            return print_writer;
+        } 
+        catch(IOException e) 
+        {
+            System.err.println("File exception: " + e.toString());
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+    
+    /*
+     * public boolean toJVM(SimpleNode root) {
+     * 
+     * PrintWriter print_writer = getJFile();
+     * 
+     * if(root == null) return false;
+     * 
+     * /*if(root !instanceof SimpleNode) return null;
+     * 
+     * String s = ".super java/lang/Object \n";
+     * 
+     * print_writer.println(".class public " + this.moduleName); //substring(9) ?
+     * print_writer.println(s); }
+     */
+
+  public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
+  {
+    SimpleNode expr;
+
+    /*
+    if(expr.jjGetChild(0) instanceof SimpleNode || expr.jjGetChild(0) instanceof SimpleNode ) //ou Node ?
+    {
+      acessToJVM(file, stm, expr.jjGetChild(0), "Load");
+      //rhsTojvm
+    } */
+  
+    switch(op)
+    {
+      case "==":
+          file.println("  if_icmpne loop" + loop + "_end" );
+          break;
+      case "!=":
+          file.println("  if_icmpeq loop" + loop + "_end" );
+          break;   
+      case "<":
+          file.println("  if_icmpge loop" + loop + "_end" );
+          break;
+      default:
+          break;   
+    }
+
+    //functionTable.setMaxStack(2);
+  
+  }
+
+    public void acessToJVM(PrintWriter file, SymbolTable st, Node n, String mode) 
+    {
+        SimpleNode access = (SimpleNode) n;
+
+        /*
+        int childs = rightHandSide.jjtGetNumChildren();
+
+        if (childs == 0) 
+        {
+            if (mode.equals("Load")) 
+                printFileLoadVariable(file, st, node, acess.getName());
+            else 
+                if (mode.equals("Store")) 
+                    printFileStoreVariable(file, st, acess.getName());
+            
+        } */
+    }
+
+  public void rhsToJVM(PrintWriter file, SymbolTable st, Node n,  boolean isETChild)
+  {
+    SimpleNode rightHandSide = (SimpleNode) n;
+
+    int childs = rightHandSide.jjtGetNumChildren();
+
+    if(childs == 1)
+    {
+        /*
+        if(rightHandSide.jjGetChild(0) instanceof SimpleNode)
+        {
+            if(!isETChild)
+            termToJvm(file, functionTable, rhs.jjtGetChild(0), 1);
+            else
+            termToJvm(file, functionTable, rhs.jjtGetChild(0), 0);
+      } */
+    }
+  }
+
+    public void termToJVM(PrintWriter file, SymbolTable st, Node node, int child_number) 
+    {
+        SimpleNode term = (SimpleNode) node;
+
+        int childs = term.jjtGetNumChildren();
+        String name;
+
+        /*
+        if (childs == 0) 
+        {
+            // int
+            if (term.Integer != "") 
+            {
+                name = term.Integer;
+
+                if (term.op.equals("-")) 
+                {
+                    name = '-' + name;
+                }
+
+                printVariableLoad(file, functionTable, name, "Integer");
+            }
+        } 
+        else 
+            if (childs == 1) 
+            {
+                if (term.jjtGetChild(0) instanceof SimpleNode) 
+                {
+                    if (child_number != 1) 
+                        callToJvm(file, functionTable, term.jjGetChild(0), "int", 0);
+                    else 
+                        callToJvm(file, functionTable, term.jjGetChild(0), "int", 1);
+                    
+                }
+            } */
+    }
+
+  public void callToJVM(PrintWriter file, SymbolTable st, Node node, String returnValue, int child_number)
+  {
+  
+    /*
+    SimpleNode call = (SimpleNode) node;
+    SimpleNode argument_list;
+
+    int call_children = call.jjtGetNumChildren();
+
+    if(call.jjtGetNumChildren() == 0 && call.function.equals("main"))
+    {
+      file.println("  aconst_null");
+      file.println("  invokestatic " + this.moduleName.substring(9) + "/main([Ljava/lang/String;)V");
+    }
+    
+    
+    if(call_children > 0 && call.jjGetChild(0) instanceof SimpleNode)
+    {
+      argument_list = call.jjGetChild(0);
+
+      int arguments_children = argument_list.jjtGetNumChildren();
+
+      for(int i = 0; i < arguments_children; i++)
+      {
+
+      }
+    } */
+  }
+
+  public void printFileLoadVariable(PrintWriter file, SymbolTable st, String name, String type) 
+  {
+    /*
+    int n = Integer.parseInt(name);
+      
+    if (type.equals("Integer")) 
+    {
+      if (n >= 0 && n <= 5)
+        file.println("  iconst_" + n);
+      else if(n >= -128 && n <= 127)
+        file.println("  bipush " + n);
+      else if(n >= -32768 && n <= 32767)
+        file.println("  sipush " + n);
+      if(n == -1)
+          file.println("  iconst_m1");                
+      else
+        file.println("  ldc " + n);
+    } 
+    else if (type.equals("ID")) 
+    {
+      //Local Variables
+      if (st != null && st.getFromAll(name) != null) 
+      { 
+        Symbol local_variable;
+        local_variable = st.getFromAll(name);
+
+        if(local_variable.getType().equals("int")) //ints
+        { 
+            if(local_variable.getRegister() >= 0 && local_variable.getRegister()<=3)
+              file.println("  iload_" + local_variable.getRegister());
+            else 
+              file.println("  iload " + local_variable.getRegister());
+        }
+      } 
+
+      //Global variable  
+      else 
+      {            
+        Symbol global_variable;
+        global_variable = symbolTables.get(this.moduleName).getFromAll(name);
+
+        if(global_variable != null) 
+        {
+            String global_variable_type = global_variable.getType();
+            file.println("  getstatic " + this.moduleName.substring(9) + "/" + global_variable.getName() + global_variable_type);
+        }
+      }
+    } */
+  }
+
+  public void printFileStoreVariable(PrintWriter file, SymbolTable st, String name) 
+  {
+      /*
+        if (functionTable != null && st.getFromAll(name) != null) 
+        {
+            Symbol local_variable;
+            local_variable = functionTable.getFromAll(name);
+
+            if (local_variable.getType().equals("int")) {
+                if (local_variable.getRegister() >= 0 && local_variable.getRegister() <= 3)
+                    file.println("  istore_" + local_variable.getRegister());
+                else
+                    file.println("  istore " + local_variable.getRegister());
+            }
+        } */
     }
 
     public static boolean semanticAnalysis(SimpleNode root)
@@ -446,7 +694,7 @@ class JavaMMMain
 
     public static String analyseFunctionCall(Node member, String funcName, String callerType)
     {
-        boolean ownFunc = isTheSameType(callerType, className);
+        boolean ownFunc = callerType.equals(className);
         SymbolTable funcST = symbolTables.get(member.getName());
         
         if(funcST == null)
@@ -510,6 +758,10 @@ class JavaMMMain
 
                         if(variable == null)
                         {
+                            if(identifier.jjtGetNumChildren() > 0 
+                            && identifier.jjtGetChild(0).toString().equals("Member"))
+                                return "all";
+                            
                             System.out.println("Couldn't find variable " + identifier.getName() 
                                 + " in function " + funcName);
 
