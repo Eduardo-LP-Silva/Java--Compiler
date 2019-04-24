@@ -1,4 +1,7 @@
-class Tests {
+package files;
+
+class JVMTest 
+{
     public static void main(String args[]) 
     {
         boolean b = false;

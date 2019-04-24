@@ -9,11 +9,11 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
 
-
 class JavaMMMain
 {
     private static Hashtable<String, SymbolTable> symbolTables;
     private static String className;
+    private static PrintWriter jWriter;
     public static void main(String[] args) throws Exception 
     {
         if (args.length < 1) 
@@ -34,13 +34,19 @@ class JavaMMMain
             System.out.println("Symbol tables built");
             //printSymbolTables();
 
+            /*
             if(semanticAnalysis(root))
-                System.out.println("Semantic analysis complete");
+                System.out.println("Semantic analysis complete"); */
+
+            jWriter = getJFile();
+
+            if(jWriter == null)
+                return;
         }
             
     }
 
-    public PrintWriter getJFile() 
+    public static PrintWriter getJFile() 
     {
         try 
         {
@@ -52,7 +58,7 @@ class JavaMMMain
             if(!file.exists())
                 file.mkdirs();
             
-            File jasmin_file = new File(filename + '/' + "moduleName" + ".j");
+            File jasmin_file = new File(filename + '/' + className + ".j");
 
             if(!jasmin_file.exists()) 
                 jasmin_file.createNewFile();
@@ -63,60 +69,71 @@ class JavaMMMain
         } 
         catch(IOException e) 
         {
-            System.err.println("File exception: " + e.toString());
-            e.printStackTrace();
-
+            System.err.println("Couldn't open .j file");
             return null;
         }
     }
     
-    /*
-     * public boolean toJVM(SimpleNode root) {
-     * 
-     * PrintWriter print_writer = getJFile();
-     * 
-     * if(root == null) return false;
-     * 
-     * /*if(root !instanceof SimpleNode) return null;
-     * 
-     * String s = ".super java/lang/Object \n";
-     * 
-     * print_writer.println(".class public " + this.moduleName); //substring(9) ?
-     * print_writer.println(s); }
-     */
+    
+    public void toJVM(SimpleNode root) 
+    {     
+        Node classNode = root.jjtGetChild(0);
+        String extensions;
 
-  
+        if(classNode.jjtGetNumChildren() > 0 && classNode.jjtGetChild(0).toString().equals("Extends"))
+            extensions = classNode.jjtGetChild(0).getName();
+        else
+            extensions = ".super java/lang/Object\n";
 
+        jWriter.println(".class public " + className);
+        jWriter.println(extensions); 
 
-  public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
-  {
-    SimpleNode expr;
+        for (int i = 0; i < classNode.jjtGetNumChildren(); i++) 
+        {
+            Node child = classNode.jjtGetChild(i);
 
-    /*
-    if(expr.jjGetChild(0) instanceof SimpleNode || expr.jjGetChild(0) instanceof SimpleNode ) //ou Node ?
+            switch (child.toString()) 
+            {
+                case "Main":
+                case "Method":
+                    functionToJVM(child);
+                    break;
+
+                default:
+                    continue;
+            }
+        }
+    }
+     
+    public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
     {
-      acessToJVM(file, stm, expr.jjGetChild(0), "Load");
-      //rhsTojvm
-    } */
-  
-    /*switch(op)
-    {
-      case "==":
-          file.println("  if_icmpne loop" + loop + "_end" );
-          break;
-      case "!=":
-          file.println("  if_icmpeq loop" + loop + "_end" );
-          break;   
-      case "<":
-          file.println("  if_icmpge loop" + loop + "_end" );
-          break;
-      default:
-          break;   
-    }*/
+        SimpleNode expr;
 
-    //functionTable.setMaxStack(2);
-  
-  }
+        /*
+        if(expr.jjGetChild(0) instanceof SimpleNode || expr.jjGetChild(0) instanceof SimpleNode ) //ou Node ?
+        {
+        acessToJVM(file, stm, expr.jjGetChild(0), "Load");
+        //rhsTojvm
+        } */
+    
+        /*switch(op)
+        {
+        case "==":
+            file.println("  if_icmpne loop" + loop + "_end" );
+            break;
+        case "!=":
+            file.println("  if_icmpeq loop" + loop + "_end" );
+            break;   
+        case "<":
+            file.println("  if_icmpge loop" + loop + "_end" );
+            break;
+        default:
+            break;   
+        }*/
+
+        //functionTable.setMaxStack(2);
+    
+    }
 
     public void acessToJVM(PrintWriter file, SymbolTable st, Node n, String mode) 
     {
@@ -135,7 +152,7 @@ class JavaMMMain
         } */
     }
 
-  public void functionToJVM(PrintWriter file, SymbolTable st, Node n)
+  public void functionToJVM(Node n)
   {
     //SymbolTable functionTable = this.symbolTables.get(function.name);
 
