@@ -42,6 +42,11 @@ class JavaMMMain
 
             if(jWriter == null)
                 return;
+
+            toJVM(root);
+
+            System.out.println("JVM file generated");
+            jWriter.close();
         }
             
     }
@@ -75,7 +80,7 @@ class JavaMMMain
     }
     
     
-    public void toJVM(SimpleNode root) 
+    public static void toJVM(SimpleNode root) 
     {     
         Node classNode = root.jjtGetChild(0);
         String extensions;
@@ -152,7 +157,7 @@ class JavaMMMain
         } */
     }
 
-  public void functionToJVM(Node n)
+  public static void functionToJVM(Node n)
   {
     //SymbolTable functionTable = this.symbolTables.get(function.name);
 
