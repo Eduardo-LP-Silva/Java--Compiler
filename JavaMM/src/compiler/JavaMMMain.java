@@ -85,6 +85,9 @@ class JavaMMMain
      * print_writer.println(s); }
      */
 
+  
+
+
   public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
   {
     SimpleNode expr;
@@ -96,7 +99,7 @@ class JavaMMMain
       //rhsTojvm
     } */
   
-    switch(op)
+    /*switch(op)
     {
       case "==":
           file.println("  if_icmpne loop" + loop + "_end" );
@@ -109,7 +112,7 @@ class JavaMMMain
           break;
       default:
           break;   
-    }
+    }*/
 
     //functionTable.setMaxStack(2);
   
@@ -120,53 +123,101 @@ class JavaMMMain
         SimpleNode access = (SimpleNode) n;
 
         /*
-        int childs = rightHandSide.jjtGetNumChildren();
+        int children = rightHandSide.jjtGetNumChildren();
 
-        if (childs == 0) 
+        if (children == 0) 
         {
             if (mode.equals("Load")) 
                 printFileLoadVariable(file, st, node, acess.getName());
-            else 
-                if (mode.equals("Store")) 
-                    printFileStoreVariable(file, st, acess.getName());
+            else if (mode.equals("Store")) 
+                printFileStoreVariable(file, st, acess.getName());
             
         } */
     }
 
+  public void functionToJVM(PrintWriter file, SymbolTable st, Node n)
+  {
+    //SymbolTable functionTable = this.symbolTables.get(function.name);
+
+    //functionTable.setRegisters(function.name);
+
+    SimpleNode function = (SimpleNode) n;
+    SimpleNode args = null;
+
+    int children = function.jjtGetNumChildren();
+
+    for(int i = 0; i < children; i++)
+    {
+
+    }
+  }
+
+
   public void rhsToJVM(PrintWriter file, SymbolTable st, Node n,  boolean isETChild)
   {
-    SimpleNode rightHandSide = (SimpleNode) n;
+    // SimpleNode rightHandSide = (SimpleNode) n;
 
-    int childs = rightHandSide.jjtGetNumChildren();
+    // int children = rightHandSide.jjtGetNumChildren();
 
-    if(childs == 1)
-    {
-        /*
-        if(rightHandSide.jjGetChild(0) instanceof SimpleNode)
-        {
-            if(!isETChild)
-            termToJvm(file, functionTable, rhs.jjtGetChild(0), 1);
-            else
-            termToJvm(file, functionTable, rhs.jjtGetChild(0), 0);
-      } */
-    }
+    // if(children == 1)
+    // {
+    //     if(rightHandSide.jjGetChild(0) instanceof SimpleNode) //verificar se é termo
+    //     {
+    //         if(!isETChild)
+    //         termToJvm(file, functionTable, rhs.jjtGetChild(0), 1);
+    //         else
+    //         termToJvm(file, functionTable, rhs.jjtGetChild(0), 0);
+    //     } 
+    // }
+    // else if(children == 2)
+    // {
+    //     SimpleNode t1 = (SimpleNode) rhs.jjtGetChild(0);
+    //     SimpleNode t2 = (SimpleNode) rhs.jjtGetChild(1);
+
+    //     termToJvm(file, st, term1, 0);
+    //     termToJvm(file, st, term2, 1);
+    
+    //     String print;
+
+    //     if(rhs.operator)
+    //     {
+    //         case "+":
+    //             print = "  iadd";
+    //             break;
+    //         case "-":
+    //             print = "  isub";
+    //             break;
+    //         case "*":
+    //             print = "  imul";
+    //             break;
+    //         case "/":
+    //             print = "  idiv";
+    //             break;
+    //         default:
+    //             break;
+    //     }
+
+    //     file.println(print);
+    // }
+
+    //st.setMaxStack(2);  
   }
 
     public void termToJVM(PrintWriter file, SymbolTable st, Node node, int child_number) 
     {
-        SimpleNode term = (SimpleNode) node;
+      /*  SimpleNode term = (SimpleNode) node;
 
-        int childs = term.jjtGetNumChildren();
+        int children = term.jjtGetNumChildren();
         String name;
 
-        /*
-        if (childs == 0) 
+        if (children == 0) 
         {
             // int
             if (term.Integer != "") 
             {
                 name = term.Integer;
 
+                //negative int
                 if (term.op.equals("-")) 
                 {
                     name = '-' + name;
@@ -175,18 +226,17 @@ class JavaMMMain
                 printVariableLoad(file, functionTable, name, "Integer");
             }
         } 
-        else 
-            if (childs == 1) 
+        else if (children == 1) 
+        {
+            if (term.jjtGetChild(0) instanceof SimpleNode) 
             {
-                if (term.jjtGetChild(0) instanceof SimpleNode) 
-                {
-                    if (child_number != 1) 
-                        callToJvm(file, functionTable, term.jjGetChild(0), "int", 0);
-                    else 
-                        callToJvm(file, functionTable, term.jjGetChild(0), "int", 1);
-                    
-                }
-            } */
+                if (child_number != 1) 
+                    callToJvm(file, functionTable, term.jjGetChild(0), "int", 0);
+                else 
+                    callToJvm(file, functionTable, term.jjGetChild(0), "int", 1);
+                
+            }
+        } */
     }
 
   public void callToJVM(PrintWriter file, SymbolTable st, Node node, String returnValue, int child_number)
