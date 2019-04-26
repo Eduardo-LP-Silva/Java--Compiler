@@ -57,7 +57,7 @@ class JavaMMMain
         {
             PrintWriter print_writer;
 
-            String filename = "jasmin";
+            String filename = "jasminFiles";
             File file = new File(filename);
 
             if(!file.exists())
