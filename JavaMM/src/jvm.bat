@@ -1,3 +1,3 @@
 javac files/JVMTest.java
 javap -c files.JVMTest
-cmd
+ Ctrl+Alt+T
