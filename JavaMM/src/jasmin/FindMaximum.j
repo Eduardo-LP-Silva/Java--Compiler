@@ -10,16 +10,19 @@
 .method public find_maximum([I)I
 	.limit locals 4
 
+ireturn
 .end method
 
 .method public build_test_arr()I
 	.limit locals 0
 
+ireturn
 .end method
 
 .method public get_array()[I
 	.limit locals 0
 
+areturn
 .end method
 
 .method public static main([Ljava/lang/String;)V
@@ -28,5 +31,6 @@
 	iload_1
 	invokevirtual FindMaximum/build_test_arr()I
 	invokevirtual ioPlus/printResult(I )V
+return
 .end method
 
