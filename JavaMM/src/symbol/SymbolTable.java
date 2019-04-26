@@ -41,6 +41,8 @@ public class SymbolTable
     public boolean putArg(Symbol symbol)
     {
         String key = symbol.getName();
+        
+        symbol.setInit(true);
 
         if(args.get(key) == null)
         {

@@ -7,7 +7,10 @@ class JVMTest
     public static void main(String args[]) 
     {
         int v;
-        v = Math.min(1, 2);
+
+        JVMTest s;
+
+        s = new JVMTest();
         
 
     }
