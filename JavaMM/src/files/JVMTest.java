@@ -2,12 +2,20 @@ package files;
 
 class JVMTest 
 {
+    int x;
+    boolean b;
     public static void main(String args[]) 
     {
-        boolean b = false;
-        boolean b1 = true;
+        int v;
+        v = Math.min(1, 2);
+        
 
-        boolean b2 = 1 < 2 && 3 < 4;
+    }
 
+    public int someFunc(int arg1)
+    {
+        b = true;
+
+        return arg1 * 2;
     }
 }

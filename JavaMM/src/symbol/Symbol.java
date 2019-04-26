@@ -5,12 +5,13 @@ public class Symbol
     private String name;
     private String type;
     private Boolean init = false;
-    private String value;
+    private int variableIndex;
 
-    public Symbol(String name, String type)
+    public Symbol(String name, String type, int index)
     {
         this.name = name;
         this.type = type;
+        this.variableIndex = index;
     }
 
     public String getName()
@@ -23,9 +24,9 @@ public class Symbol
         return type;
     }
 
-    public String getValue()
+    public int getIndex()
     {
-        return value;
+        return variableIndex;
     }
 
     public Boolean getInit()
@@ -33,9 +34,9 @@ public class Symbol
         return init;
     }
 
-    public void setValue(String value)
+    public void setIndex(int index)
     {
-        this.value = value;
+        this.variableIndex = index;
     }
 
     public void setInit(boolean init)

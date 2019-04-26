@@ -83,15 +83,20 @@ class JavaMMMain
     public static void toJVM(SimpleNode root) 
     {     
         Node classNode = root.jjtGetChild(0);
-        String extensions;
+        String extension;
 
         if(classNode.jjtGetNumChildren() > 0 && classNode.jjtGetChild(0).toString().equals("Extends"))
-            extensions = classNode.jjtGetChild(0).getName();
+            extension = classNode.jjtGetChild(0).getName();
         else
-            extensions = ".super java/lang/Object\n";
+            extension = ".super java/lang/Object\n";
 
         jWriter.println(".class public " + className);
-        jWriter.println(extensions); 
+        jWriter.println(extension); 
+        jWriter.println(".method public <init>()V");
+        jWriter.println("aload_0");
+        jWriter.println("invokenonvirtual java/lang/Object/<init>()V");
+        jWriter.println("return");
+        jWriter.println(".end method");
 
         for (int i = 0; i < classNode.jjtGetNumChildren(); i++) 
         {
@@ -99,6 +104,10 @@ class JavaMMMain
 
             switch (child.toString()) 
             {
+                case "Var":
+                    //jWriter.println(child.getType() + " " + child.getName() + ";\n"); //Check if correct
+                    break;
+
                 case "Main":
                 case "Method":
                     functionToJVM(child);
@@ -109,7 +118,345 @@ class JavaMMMain
             }
         }
     }
+
+    public static void functionToJVM(Node function)
+    {   
+        Node args[];
+        SymbolTable function_table;
+        String function_header;
+    
+        int children = function.jjtGetNumChildren();
+    
+        String name = function.getName();
+    
+        Symbol symbol;
+        String return_symbol;
+
+        for(int i = 0; i < children; i++)
+        {
+            Node child = function.jjtGetChild(i);
+
+            switch(child.toString())
+            {
+                case "Var":
+                case "Arg":
+                    break;
+                
+                case "Return":
+                    //TODO Complete
+                    break;
+
+                default: //Statement
+                    statementToJVM(child, function.getName());
+            }
+
+            /*
+            if(.toString().equals("Arg"))
+            {
+                args[i] = function.jjGetChild(i);
+            } */
+        }
+
+        /*
+    
+        file.print('\n' + ".method public static ");
+    
+        if(name.equals("Main"))
+        {
+            file.print("main([Ljava/lang/String;)V" + '\n');
+        }
+        else
+        {
+            function_table = this.st.get(name);
+    
+            function_header = name + '(';
+    
+            for (Map.Entry<String, Symbol> entry : function_table.getArgsList().entrySet()) {
+                
+                symbol = entry.getValue();
+    
+                if(symbol.getType().equals("int"))
+                {
+                    function_header += "I";
+                }
+                else if(symbol.getType().equals("array"))
+                {
+                    function_header += "[I";
+                }
+            }
+    
+            return_symbol = function_table.getReturnType();
+            if(return_symbol == "void")
+            {
+                function_header += ")V";
+            }
+            else
+            {
+                if(return_symbol.equals("int"))
+                {
+                    function_header += ")I";
+                }
+                else if(return_symbol.equals("boolean"))
+                {
+                    function_header += ")Z";
+                }
+                else if (returnSymbol.equals("int[]"))
+                {
+                    function_header += function_header + ")[I";
+            
+                }
+            }
+            file.print(function_header);
+        }
+    
+        //limites
+        file.println("locals_" + name);
+        file.println("stack_" + name);
+    
+        //statements
+        int children = function.jjtGetNumChildren();
+        for(int i = 0; i < children; i++)
+        {
+            //statementToJVM
+        }
+    
+        //return
+        return_symbol = function_table.getReturnType();
+        if(function_table.getReturnType().equals("void"))
+        {
+            file.println("  return");
+        }
+        else
+        {
+            //printFileLoadVariable(file, st, não sei como passar aqui o simbolo de retorno como node, "ID")
+            if(return_symbol.equals("int") || return_symbol.equals("boolean"))
+            {
+                file.println("  ireturn");
+            }
+            else
+            {
+                file.println("  areturn");
+            }
+        }
+    
+        file.println(".end method\n"); */
+   
+    }
+
+    public static String getJVMInt(int constant)
+    {
+        if(constant <= 5)
+            return "iconst_" + constant;
+
+        if(constant < 128)
+            return "bipush " + constant;
+
+        return "sipush " + constant;
+    }
+
+    public static void statementToJVM(Node statement, String funcName)
+    {
+        switch (statement.toString()) 
+        {
+            case "If":
+                //TODO Complete
+                break;
+
+            case "While":
+                //TODO Complete
+                break;
+
+            case "TERM":
+                termToJVM(statement, funcName, false);
+                break;
+
+            case "EQUALS":
+                equalsToJVM(statement);
+                break;
+
+            case "Else":
+            case "Then":
+                //TODO Complete
+                break;
+
+            default:
+                System.out.println("Unexpected statement type in JVM parsing: " + statement.toString());
+        }
+    }
+
+    public static void termToJVM(Node term, String funcName, boolean store)
+    {
+        String termName = term.getName();
+        String value = "";
+
+        if(termName != null)
+        {
+            switch(termName)
+            {
+                case "true":
+                    jWriter.println("iconst_1");
+                    break;
+
+                case "false":
+                    jWriter.println("iconst_0");
+                    break;
+
+                case "this":
+                    jWriter.println("aload_0");
+                    break;
+
+                default:
+
+                    try
+                    {
+                       int i = Integer.parseInt(termName); //Integer
+                        
+                        value = getJVMInt(i);
+                    } //Variable
+                    catch(NumberFormatException nfe)
+                    {
+                        variableToJVM(term, funcName, store);
+                    }
+            }
+        }
+
+        if(term.jjtGetNumChildren() == 0)
+            return;
+        
+        Node termSon = term.jjtGetChild(0);
+        boolean noNewNorEnclosedExpr = false;
+
+        switch(termSon.toString())
+        {
+            case "ENCLOSED_EXPR":
+                if(termSon.jjtGetNumChildren() != 0)
+                {
+                    value = evaluatesTo(termSon.jjtGetChild(0), funcName);
+                    break;
+                }
+                    
+            case "NEW":
+                if(termSon.jjtGetNumChildren() == 0) //New object
+                {
+                    value = termSon.getType();
+                    break;
+                }
+                else
+                {
+                    Node arrayAcces = termSon.jjtGetChild(0);
+
+                    if(analyseArrayAccs(arrayAcces, funcName))
+                    {
+                        value = "int[]";
+                        break;
+                    }
+                }
+
+            default:
+                noNewNorEnclosedExpr = true;
+        }
+        /*
+        
+        int childIndex;
+
+        if(term.jjtGetNumChildren() == 1)
+        {
+            if(!noNewNorEnclosedExpr)
+                return value;
+            else
+                childIndex = 0;
+        }
+        else
+        {
+            if(noNewNorEnclosedExpr)
+            {
+                System.out.println("Unknown term child in term evaluation in function " + funcName + ": " 
+                    + termSon.toString());
+                
+                return "error";
+            }
+            else
+                childIndex = 1;
+        } 
+            
+        Node termSecondSon = term.jjtGetChild(childIndex);
+
+        switch(termSecondSon.toString())
+        {
+            case "ArrayAccs":
+                if(identifierEvaluatesTo(termSecondSon.jjtGetParent(), funcName, true, true).equals("int[]") 
+                    && analyseArrayAccs(termSecondSon, funcName))
+                    return "int";
+                else
+                {
+                    System.out.println("Array access failed in function " + funcName + ": " + value);
+                    return "error";
+                }
+
+            case "Member":
+                return analyseFunctionCall(termSecondSon, funcName, value);
+
+            default:
+                System.out.println("Unexpected term's second son in term evaluation in function " + funcName 
+                    + ": " + termSecondSon.toString());
+
+                return "error";
+        } */
+    }
+
+    public static void equalsToJVM(Node equals)
+    {
+
+    }
+
+    public static void variableToJVM(Node identifier, String funcName, boolean store)
+    {
+        SymbolTable symbolTable = symbolTables.get(funcName);
+        Symbol variable;
+
+        if(symbolTable != null)
+        {
+            variable = symbolTable.getTable().get(identifier.getName());
+
+            if(variable == null)
+            {
+                variable = symbolTable.getArgs().get(identifier.getName());
+
+                if(variable == null)
+                {
+                    symbolTable = symbolTables.get(className);
+
+                    if(symbolTable != null)
+                    {
+                        variable = symbolTable.getTable().get(identifier.getName());
      
+                        if(variable != null)
+                        {
+                            if(store)
+                                jWriter.println("putfield " + className + " " + variable.getType());
+                            else
+                                jWriter.println("getfield " + className + " " + variable.getType());
+                        }
+                    }
+                }
+                else
+                {
+                    if(store)
+                        jWriter.println("istore_" + variable.getIndex());
+                    else
+                        jWriter.println("iload_" + variable.getIndex());
+                }
+            }
+            else
+            {
+                if(store)
+                    jWriter.println("istore_" + variable.getIndex());
+                else
+                    jWriter.println("iload_" + variable.getIndex());
+            }
+        }
+    }
+
     public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
     {
         SimpleNode expr;
@@ -156,23 +503,6 @@ class JavaMMMain
             
         } */
     }
-
-  public static void functionToJVM(Node n)
-  {
-    //SymbolTable functionTable = this.symbolTables.get(function.name);
-
-    //functionTable.setRegisters(function.name);
-
-    SimpleNode function = (SimpleNode) n;
-    SimpleNode args = null;
-
-    int children = function.jjtGetNumChildren();
-
-    for(int i = 0; i < children; i++)
-    {
-
-    }
-  }
 
 
   public void rhsToJVM(PrintWriter file, SymbolTable st, Node n,  boolean isETChild)
@@ -644,7 +974,7 @@ class JavaMMMain
                     {
                         Integer.parseInt(termName); //Integer
                         
-                        return "int";
+                        return "int"; //TODO change to value = 
                     } //Variable
                     catch(NumberFormatException nfe) 
                     {
@@ -919,11 +1249,11 @@ class JavaMMMain
                         switch(child.toString())
                         {
                             case "Var":
-                                builtSymbolTable = buildLocalSymbolTable(child, classNode, false);
+                                builtSymbolTable = buildLocalSymbolTable(child, classNode, false, i);
                                 break;
 
                             case "Main":
-                                builtSymbolTable = buildMainSymbolTable(child);
+                                builtSymbolTable = buildMainSymbolTable(child, i);
                                 break;
 
                             case "Method":
@@ -957,7 +1287,7 @@ class JavaMMMain
         return true;
     }
 
-    public static boolean buildLocalSymbolTable(Node var, Node parentNode, boolean main)
+    public static boolean buildLocalSymbolTable(Node var, Node parentNode, boolean main, int index)
     {
         SymbolTable classST; 
         
@@ -968,7 +1298,7 @@ class JavaMMMain
             
         Symbol newSymbol;
 
-        newSymbol = new Symbol(var.getName(), var.getType());
+        newSymbol = new Symbol(var.getName(), var.getType(), index);
 
         if(var.toString().equals("Arg"))
         {
@@ -1025,14 +1355,14 @@ class JavaMMMain
         for(int i = 0; i < func.jjtGetNumChildren(); i++)
         {
             if(func.jjtGetChild(i).toString().equals("Arg") || func.jjtGetChild(i).toString().equals("Var"))
-                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false))
+                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false, i))
                     return false;
         }
 
         return true;
     }
 
-    public static boolean buildMainSymbolTable(Node main)
+    public static boolean buildMainSymbolTable(Node main, int index)
     {
         SymbolTable funcTable = symbolTables.get("main");
 
@@ -1042,13 +1372,13 @@ class JavaMMMain
             funcTable = new SymbolTable();
 
         funcTable.setReturnType("void");
-        funcTable.putArg(new Symbol(main.getType(), "String[]")); //Type in main = argument identifier
+        funcTable.putArg(new Symbol(main.getType(), "String[]", index)); //Type in main = argument identifier
         symbolTables.put("main", funcTable);
 
         for(int i = 0; i < main.jjtGetNumChildren(); i++)
         {
             if(main.jjtGetChild(i).toString().equals("Var"))
-                if(!buildLocalSymbolTable(main.jjtGetChild(i), main, true))
+                if(!buildLocalSymbolTable(main.jjtGetChild(i), main, true, i + 1))
                     return false;
         }
 
