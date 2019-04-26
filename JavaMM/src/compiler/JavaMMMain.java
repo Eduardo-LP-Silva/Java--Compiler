@@ -8,12 +8,15 @@ import java.util.Set;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
 
 class JavaMMMain
 {
     private static Hashtable<String, SymbolTable> symbolTables;
     private static String className;
     private static PrintWriter jWriter;
+    private static ArrayList<String> usedLabels; 
     public static void main(String[] args) throws Exception
     {
         if (args.length < 1)
@@ -23,6 +26,7 @@ class JavaMMMain
         }
 
         symbolTables = new Hashtable<String, SymbolTable>();
+        usedLabels = new ArrayList<String>();
 
         JavaMM parser = new JavaMM(new FileInputStream(args[0]));
         SimpleNode root = parser.Program();
@@ -34,9 +38,10 @@ class JavaMMMain
             System.out.println("Symbol tables built");
             //printSymbolTables();
 
-
             if(semanticAnalysis(root))
                 System.out.println("Semantic analysis complete");
+            else
+                return;
 
             jWriter = getJFile();
 
@@ -109,26 +114,23 @@ class JavaMMMain
 
                 case "Main":
                 case "Method":
+                    usedLabels.clear();
+                    usedLabels.trimToSize();
                     functionToJVM(child);
                     break;
 
                 default:
                     continue;
             }
+
         }
     }
 
     public static void functionToJVM(Node function)
     {
-        Node args[];
-        String function_header;
-
         int children = function.jjtGetNumChildren();
 
         String funcName = function.getName();
-
-        Symbol symbol;
-        String return_symbol;
 
         int i = 0;
 
@@ -159,9 +161,6 @@ class JavaMMMain
         {
             int nLocals = function_table.getTable().size() + function_table.getArgs().size();
 
-            if(funcName.equals("main"))
-                nLocals++;
-
             jWriter.println("\t.limit locals " + nLocals + "\n");
         }
 
@@ -176,123 +175,35 @@ class JavaMMMain
                     break;
 
                 case "Return":
-                    //TODO Complete
+                    returnToJVM(child, funcName);
                     break;
 
                 default: //Statement
                     statementToJVM(child, funcName);
             }
-
-            /*
-            if(.toString().equals("Arg"))
-            {
-                args[i] = function.jjGetChild(i);
-            } */
         }
 
-        if(function_table.getReturnType().equals("void"))
-          {
-              jWriter.println("return");
-          }
-          else
-          {
-
-              if(function_table.getReturnType().equals("int"))
-              {
-                  jWriter.println("ireturn");
-              }
-              else
-              {
-                  jWriter.println("areturn");
-              }
-          }
-
-          jWriter.println(".end method\n");
-
-        /*
-
-        file.print('\n' + ".method public static ");
-
-        if(name.equals("Main"))
+        switch (function_table.getReturnType()) 
         {
-            file.print("main([Ljava/lang/String;)V" + '\n');
-        }
-        else
-        {
-            function_table = this.st.get(name);
+            case "int":
+            case "boolean":
+                jWriter.println("\tireturn");
+                break;
 
-            function_header = name + '(';
+            case "int[]":
+                jWriter.println("\tareturn");
+                break;
 
-            for (Map.Entry<String, Symbol> entry : function_table.getArgsList().entrySet()) {
-
-                symbol = entry.getValue();
-
-                if(symbol.getType().equals("int"))
-                {
-                    function_header += "I";
-                }
-                else if(symbol.getType().equals("array"))
-                {
-                    function_header += "[I";
-                }
-            }
-
-            return_symbol = function_table.getReturnType();
-            if(return_symbol == "void")
-            {
-                function_header += ")V";
-            }
-            else
-            {
-                if(return_symbol.equals("int"))
-                {
-                    function_header += ")I";
-                }
-                else if(return_symbol.equals("boolean"))
-                {
-                    function_header += ")Z";
-                }
-                else if (returnSymbol.equals("int[]"))
-                {
-                    function_header += function_header + ")[I";
-
-                }
-            }
-            file.print(function_header);
+            case "void":
+                jWriter.println("\treturn");
         }
 
-        //limites
-        file.println("locals_" + name);
-        file.println("stack_" + name);
+        jWriter.println(".end method\n");
+    }
 
-        //statements
-        int children = function.jjtGetNumChildren();
-        for(int i = 0; i < children; i++)
-        {
-            //statementToJVM
-        }
-
-        //return
-        return_symbol = function_table.getReturnType();
-        if(function_table.getReturnType().equals("void"))
-        {
-            file.println("  return");
-        }
-        else
-        {
-            //printFileLoadVariable(file, st, não sei como passar aqui o simbolo de retorno como node, "ID")
-            if(return_symbol.equals("int") || return_symbol.equals("boolean"))
-            {
-                file.println("  ireturn");
-            }
-            else
-            {
-                file.println("  areturn");
-            }
-        }
-
-        file.println(".end method\n"); */
-
+    public static void returnToJVM(Node returnNode, String funcName)
+    {
+        expressionToJVM(returnNode.jjtGetChild(0), funcName);
     }
 
     public static void getJVMInt(int constant)
@@ -347,7 +258,7 @@ class JavaMMMain
                 break;
 
             case "EQUALS":
-                equalsToJVM(statement);
+                equalsToJVM(statement, funcName);
                 break;
 
             case "Else":
@@ -423,13 +334,14 @@ class JavaMMMain
                     value = termSon.getType();
                     jWriter.println("\tnew " + termSon.getType());
                     jWriter.println("\tinvokenonvirtual " + termSon.getType() + "()V");
-                    break;
                 }
                 else
                 {
                     value = "int[]";
                     //TODO Check for new array
                 }
+
+                break;
 
             default:
                 noNewNorEnclosedExpr = true;
@@ -458,6 +370,7 @@ class JavaMMMain
         {
             case "ArrayAccs":
                 //TODO Complete
+                break;
 
             case "Member":
 
@@ -518,69 +431,138 @@ class JavaMMMain
 
     public static void expressionToJVM(Node expression, String funcName)
     {
-        /*
+        String label1, label2;
+
         switch(expression.toString())
         {
             case "ADD":
-            case "SUB":
-            case "DIV":
-            case "MUL":
-                if(expression.jjtGetNumChildren() == 2
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "int")
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "int"))
-                    return;
-                else
-                {
-                    System.out.println("Operand(s) in expression of type " + expression.toString()
-                        + " don't evaluate to integers in function " + funcName);
-                    return;
-                }
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\tiadd");
+                break;
 
+            case "SUB":
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\tisub");
+                break;
+
+            case "DIV":
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\tidiv");
+                break;
+
+            case "MUL":
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\timul");
+                break;
 
             case "AND":
-                if(expression.jjtGetNumChildren() == 2
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "boolean")
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "boolean"))
-                    return;
-                else
-                {
-                    System.out.println("Operand(s) in expression of type AND don't evaluate to booleans in function "
-                        + funcName);
-                    return;
-                }
+                label1 = generateRandomLabel(funcName); 
+                label2 = generateRandomLabel(funcName);
+                
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                jWriter.println("\tifeq " + label1);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\tifeq " + label1);
+                jWriter.println("\ticonst_1");
+                jWriter.println("\tgoto " + label2);
+                jWriter.println(label1 + ":");
+                jWriter.println("\ticonst_0");
+                jWriter.println(label2 + ":");
+                break;
 
 
             case "LOWER":
-                if(expression.jjtGetNumChildren() == 2
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "int")
-                    && isTheSameType(evaluatesTo(expression.jjtGetChild(1), funcName), "int"))
-                    return;
-                else
-                {
-                    System.out.println("Operand(s) in expression of type LOWER don't evaluate to integers in function "
-                        + funcName);
-                    return;
-                }
+                label1 = generateRandomLabel(funcName); 
+                label2 = generateRandomLabel(funcName);
 
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName);
+                jWriter.println("\tif_icmpge " + label1);
+                jWriter.println("\ticonst_1");
+                jWriter.println("\tgoto " + label2);
+                jWriter.println(label1 + ":");
+                jWriter.println("\ticonst_0");
+                jWriter.println(label2 + ":");
+                break;
 
             case "TERM":
-                termEvaluatesTo(expression, funcName);
+                termToJVM(expression, funcName, false);
+                break;
 
             default:
                 System.out.println("Unexpected token to parse to JVM in function " + funcName + ": " + expression.toString());
                 return;
-        } */
+        }
     }
 
-    public static void equalsToJVM(Node equals)
+    public static void equalsToJVM(Node equals, String funcName)
     {
+        Node lhs = equals.jjtGetChild(0), expression = equals.jjtGetChild(1);
+        
+        expressionToJVM(expression, funcName);
+        termToJVM(lhs, funcName, true);
 
+        if(lhs.jjtGetNumChildren() > 0)
+        {
+            Node lhsChild = lhs.jjtGetChild(0);
+            
+            switch(lhsChild.toString())
+            {
+                case "ArrayAccs":
+                    //TODO Complete;
+                    break;
+
+                case "Member":
+                SymbolTable funcST = symbolTables.get(funcName);
+                Symbol caller;
+
+                caller = funcST.getTable().get(lhs.getName());
+
+                if(caller == null)
+                    caller = funcST.getArgs().get(lhs.getName());
+
+                if(caller == null)
+                {
+                    funcST = symbolTables.get(className);
+
+                    caller = funcST.getTable().get(lhs.getName());
+                }
+
+                if(caller != null)
+                    functionCallToJVM(lhsChild, funcName, caller.getType());
+                else
+                    functionCallToJVM(lhsChild, funcName, lhs.getName());
+            }
+        }
+
+        jWriter.print("\n");
+    }
+
+    public static String generateRandomLabel(String funcName)
+    {
+        String label;
+        Random rand = new Random();
+
+        do
+        {
+            label = funcName + Integer.toString(rand.nextInt(10000));
+        }
+        while(usedLabels.contains(label));
+
+        usedLabels.add(label);
+
+        return label;
     }
 
     public static void variableToJVM(Node identifier, String funcName, boolean store)
     {
         SymbolTable symbolTable = symbolTables.get(funcName);
         Symbol variable;
+        String cmd;
 
         if(symbolTable != null)
         {
@@ -601,258 +583,43 @@ class JavaMMMain
                         if(variable != null)
                         {
                             if(store)
-                                jWriter.println("\tputfield " + className + " " + variable.getType());
+                                jWriter.println("\tputfield " + className + " " + getJVMType(variable.getType()));
                             else
-                                jWriter.println("\tgetfield " + className + " " + variable.getType());
+                                jWriter.println("\tgetfield " + className + " " + getJVMType(variable.getType()));
                         }
                     }
+
+                    return;
                 }
                 else
                 {
                     if(store)
-                        jWriter.println("\tistore_" + variable.getIndex());
+                        cmd = "store_" + variable.getIndex();
                     else
-                        jWriter.println("\tiload_" + variable.getIndex());
+                        cmd = "load_" + variable.getIndex();
                 }
             }
             else
             {
                 if(store)
-                    jWriter.println("\tistore_" + variable.getIndex());
+                    cmd = "store_" + variable.getIndex();
                 else
-                    jWriter.println("\tiload_" + variable.getIndex());
+                    cmd = "load_" + variable.getIndex();
             }
-        }
-    }
 
-    public void arithmeticExpressionToJVM(PrintWriter file, SymbolTable st, Node root, int loop, String op)
-    {
-        SimpleNode expr;
-
-        /*
-        if(expr.jjGetChild(0) instanceof SimpleNode || expr.jjGetChild(0) instanceof SimpleNode ) //ou Node ?
-        {
-        acessToJVM(file, stm, expr.jjGetChild(0), "Load");
-        //rhsTojvm
-        } */
-
-        /*switch(op)
-        {
-        case "==":
-            file.println("  if_icmpne loop" + loop + "_end" );
-            break;
-        case "!=":
-            file.println("  if_icmpeq loop" + loop + "_end" );
-            break;
-        case "<":
-            file.println("  if_icmpge loop" + loop + "_end" );
-            break;
-        default:
-            break;
-        }*/
-
-        //functionTable.setMaxStack(2);
-
-    }
-
-    public void acessToJVM(PrintWriter file, SymbolTable st, Node n, String mode)
-    {
-        SimpleNode access = (SimpleNode) n;
-
-        /*
-        int children = rightHandSide.jjtGetNumChildren();
-
-        if (children == 0)
-        {
-            if (mode.equals("Load"))
-                printFileLoadVariable(file, st, node, acess.getName());
-            else if (mode.equals("Store"))
-                printFileStoreVariable(file, st, acess.getName());
-
-        } */
-    }
-
-
-  public void rhsToJVM(PrintWriter file, SymbolTable st, Node n,  boolean isETChild)
-  {
-    // SimpleNode rightHandSide = (SimpleNode) n;
-
-    // int children = rightHandSide.jjtGetNumChildren();
-
-    // if(children == 1)
-    // {
-    //     if(rightHandSide.jjGetChild(0) instanceof SimpleNode) //verificar se é termo
-    //     {
-    //         if(!isETChild)
-    //         termToJvm(file, functionTable, rhs.jjtGetChild(0), 1);
-    //         else
-    //         termToJvm(file, functionTable, rhs.jjtGetChild(0), 0);
-    //     }
-    // }
-    // else if(children == 2)
-    // {
-    //     SimpleNode t1 = (SimpleNode) rhs.jjtGetChild(0);
-    //     SimpleNode t2 = (SimpleNode) rhs.jjtGetChild(1);
-
-    //     termToJvm(file, st, term1, 0);
-    //     termToJvm(file, st, term2, 1);
-
-    //     String print;
-
-    //     if(rhs.operator)
-    //     {
-    //         case "+":
-    //             print = "  iadd";
-    //             break;
-    //         case "-":
-    //             print = "  isub";
-    //             break;
-    //         case "*":
-    //             print = "  imul";
-    //             break;
-    //         case "/":
-    //             print = "  idiv";
-    //             break;
-    //         default:
-    //             break;
-    //     }
-
-    //     file.println(print);
-    // }
-
-    //st.setMaxStack(2);
-  }
-
-    public void termToJVM(PrintWriter file, SymbolTable st, Node node, int child_number)
-    {
-      /*  SimpleNode term = (SimpleNode) node;
-
-        int children = term.jjtGetNumChildren();
-        String name;
-
-        if (children == 0)
-        {
-            // int
-            if (term.Integer != "")
+            switch(variable.getType())
             {
-                name = term.Integer;
+                case "int":
+                case "boolean":
+                    cmd = "\ti" + cmd;
+                    break;
 
-                //negative int
-                if (term.op.equals("-"))
-                {
-                    name = '-' + name;
-                }
-
-                printVariableLoad(file, functionTable, name, "Integer");
+                default:
+                    cmd = "\ta" + cmd;
             }
+
+            jWriter.println(cmd);
         }
-        else if (children == 1)
-        {
-            if (term.jjtGetChild(0) instanceof SimpleNode)
-            {
-                if (child_number != 1)
-                    callToJvm(file, functionTable, term.jjGetChild(0), "int", 0);
-                else
-                    callToJvm(file, functionTable, term.jjGetChild(0), "int", 1);
-
-            }
-        } */
-    }
-
-  public void callToJVM(PrintWriter file, SymbolTable st, Node node, String returnValue, int child_number)
-  {
-
-    /*
-    SimpleNode call = (SimpleNode) node;
-    SimpleNode argument_list;
-
-    int call_children = call.jjtGetNumChildren();
-
-    if(call.jjtGetNumChildren() == 0 && call.function.equals("main"))
-    {
-      file.println("  aconst_null");
-      file.println("  invokestatic " + this.moduleName.substring(9) + "/main([Ljava/lang/String;)V");
-    }
-
-
-    if(call_children > 0 && call.jjGetChild(0) instanceof SimpleNode)
-    {
-      argument_list = call.jjGetChild(0);
-
-      int arguments_children = argument_list.jjtGetNumChildren();
-
-      for(int i = 0; i < arguments_children; i++)
-      {
-
-      }
-    } */
-  }
-
-  public void printFileLoadVariable(PrintWriter file, SymbolTable st, String name, String type)
-  {
-    /*
-    int n = Integer.parseInt(name);
-
-    if (type.equals("Integer"))
-    {
-      if (n >= 0 && n <= 5)
-        file.println("  iconst_" + n);
-      else if(n >= -128 && n <= 127)
-        file.println("  bipush " + n);
-      else if(n >= -32768 && n <= 32767)
-        file.println("  sipush " + n);
-      if(n == -1)
-          file.println("  iconst_m1");
-      else
-        file.println("  ldc " + n);
-    }
-    else if (type.equals("ID"))
-    {
-      //Local Variables
-      if (st != null && st.getFromAll(name) != null)
-      {
-        Symbol local_variable;
-        local_variable = st.getFromAll(name);
-
-        if(local_variable.getType().equals("int")) //ints
-        {
-            if(local_variable.getRegister() >= 0 && local_variable.getRegister()<=3)
-              file.println("  iload_" + local_variable.getRegister());
-            else
-              file.println("  iload " + local_variable.getRegister());
-        }
-      }
-
-      //Global variable
-      else
-      {
-        Symbol global_variable;
-        global_variable = symbolTables.get(this.moduleName).getFromAll(name);
-
-        if(global_variable != null)
-        {
-            String global_variable_type = global_variable.getType();
-            file.println("  getstatic " + this.moduleName.substring(9) + "/" + global_variable.getName() + global_variable_type);
-        }
-      }
-    } */
-  }
-
-  public void printFileStoreVariable(PrintWriter file, SymbolTable st, String name)
-  {
-      /*
-        if (functionTable != null && st.getFromAll(name) != null)
-        {
-            Symbol local_variable;
-            local_variable = functionTable.getFromAll(name);
-
-            if (local_variable.getType().equals("int")) {
-                if (local_variable.getRegister() >= 0 && local_variable.getRegister() <= 3)
-                    file.println("  istore_" + local_variable.getRegister());
-                else
-                    file.println("  istore " + local_variable.getRegister());
-            }
-        } */
     }
 
     public static boolean semanticAnalysis(SimpleNode root)

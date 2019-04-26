@@ -1,8 +1,7 @@
-./Testing/open_cmd.bat
-./JavaMM/src/ast/*.class
-./JavaMM/src/compiler/*.class
-./JavaMM/src/symbol/*.class
-./JavaMM/.settings
-./JavaMM/bin
-./JavaMM/src/*.bat
-./JavaMM/bin/*.bat
+/JavaMM/src/ast/*.class
+/JavaMM/src/compiler/*.class
+/JavaMM/src/symbol/*.class
+/JavaMM/.settings
+/JavaMM/bin/compiler/*.class
+/JavaMM/src/*.bat
+/JavaMM/bin/*.bat

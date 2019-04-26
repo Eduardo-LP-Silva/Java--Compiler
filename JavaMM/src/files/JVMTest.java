@@ -6,19 +6,24 @@ class JVMTest
     boolean b;
     public static void main(String args[]) 
     {
-        int v;
+        int v1 = 1, v2 = 2;
+        boolean v3;
 
-        JVMTest s;
-
-        s = new JVMTest();
-        
+        v3 = v1 < v2;
 
     }
 
-    public int someFunc(int arg1)
+    public boolean someFunc(int arg1)
     {
-        b = true;
+        JVMTest t = new JVMTest();
 
-        return arg1 * 2;
+        t.someOtherFunc();
+
+        return b;
+    }
+
+    public int someOtherFunc()
+    {
+        return 1;
     }
 }
