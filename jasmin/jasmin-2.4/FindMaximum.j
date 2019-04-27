@@ -69,4 +69,3 @@
 	invokevirtual ioPlus/printResult(I)V
 	return
 .end method
-

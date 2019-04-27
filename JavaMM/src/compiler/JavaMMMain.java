@@ -150,6 +150,9 @@ class JavaMMMain
                     jWriter.print(getJVMType(arg.getType()));
                 else
                     break;
+
+                if(i + 1 < children && function.jjtGetChild(i + 1).toString().equals("Arg"))
+                    jWriter.print(" ");
             }
 
             jWriter.print(")" + getJVMType(function.getReturnType()) + "\n");
@@ -424,7 +427,13 @@ class JavaMMMain
         cmd += caller + "/" + member.getName() + "(";
 
         for(int i = 0; i < argTypes.length; i++)
-            cmd += getJVMType(argTypes[i]) + " ";
+        {
+            cmd += getJVMType(argTypes[i]);
+
+            if(i < argTypes.length - 1)
+                cmd += " ";
+        }
+            
 
         jWriter.print("\t" + cmd + ")" + returnType + "\n");
     }
@@ -583,9 +592,11 @@ class JavaMMMain
                         if(variable != null)
                         {
                             if(store)
-                                jWriter.println("\tputfield " + className + " " + getJVMType(variable.getType()));
+                                jWriter.println("\tputfield " + className + "/" + variable.getName() 
+                                    + " " + getJVMType(variable.getType()));
                             else
-                                jWriter.println("\tgetfield " + className + " " + getJVMType(variable.getType()));
+                                jWriter.println("\tgetfield " + className + "/" + variable.getName() 
+                                    + " " + getJVMType(variable.getType()));
                         }
                     }
 

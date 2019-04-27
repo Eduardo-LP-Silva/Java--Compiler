@@ -23,24 +23,24 @@
 .method public build_test_arr()I
 	.limit locals 0
 
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	bipush 14
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	bipush 28
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	iconst_0
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	iconst_0
 	iconst_5
 	isub
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	bipush 12
-	putfield FindMaximum [I
+	putfield FindMaximum/test_arr [I
 
 	iconst_0
 	ireturn
@@ -49,7 +49,7 @@
 .method public get_array()[I
 	.limit locals 0
 
-	getfield FindMaximum [I
+	getfield FindMaximum/test_arr [I
 	areturn
 .end method
 
@@ -65,8 +65,8 @@
 	aload_1
 	aload_1
 	invokevirtual FindMaximum/get_array()[I
-	invokevirtual FindMaximum/find_maximum([I )I
-	invokevirtual ioPlus/printResult(I )V
+	invokevirtual FindMaximum/find_maximum([I)I
+	invokevirtual ioPlus/printResult(I)V
 	return
 .end method
 
