@@ -484,9 +484,9 @@ class JavaMMMain
                 jWriter.println("\tifeq " + label1);
                 jWriter.println("\ticonst_1");
                 jWriter.println("\tgoto " + label2);
-                jWriter.println(label1 + ":");
+                jWriter.println("\n" + label1 + ":");
                 jWriter.println("\ticonst_0");
-                jWriter.println(label2 + ":");
+                jWriter.println("\n" + label2 + ":");
                 break;
 
 
@@ -499,9 +499,9 @@ class JavaMMMain
                 jWriter.println("\tif_icmpge " + label1);
                 jWriter.println("\ticonst_1");
                 jWriter.println("\tgoto " + label2);
-                jWriter.println(label1 + ":");
+                jWriter.println("\n" + label1 + ":");
                 jWriter.println("\ticonst_0");
-                jWriter.println(label2 + ":");
+                jWriter.println("\n" + label2 + ":");
                 break;
 
             case "TERM":
@@ -621,9 +621,9 @@ class JavaMMMain
             else
             {
                 if(store)
-                    cmd = "store_" + variable.getIndex();
+                    cmd = "store " + variable.getIndex();
                 else
-                    cmd = "load_" + variable.getIndex();
+                    cmd = "load " + variable.getIndex();
             }
 
             switch(variable.getType())

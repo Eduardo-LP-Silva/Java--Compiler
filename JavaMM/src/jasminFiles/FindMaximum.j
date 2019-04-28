@@ -11,12 +11,12 @@
 	.limit locals 4
 
 	iconst_1
-	istore_2
+	istore 2
 
 	aload_1
-	istore_3
+	istore 3
 
-	iload_3
+	iload 3
 	ireturn
 .end method
 
@@ -65,12 +65,12 @@
 
 	new FindMaximum
 	invokenonvirtual <init>()V
-	astore_1
+	astore 1
 
-	aload_1
+	aload 1
 	invokevirtual FindMaximum/build_test_arr()I
-	aload_1
-	aload_1
+	aload 1
+	aload 1
 	invokevirtual FindMaximum/get_array()[I
 	invokevirtual FindMaximum/find_maximum([I)I
 	invokevirtual ioPlus/printResult(I)V
