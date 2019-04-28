@@ -11,35 +11,41 @@
 	.limit locals 4
 
 	iconst_1
-	istore_1
-
-	aload_0
 	istore_2
 
-	iload_2
+	aload_1
+	istore_3
+
+	iload_3
 	ireturn
 .end method
 
 .method public build_test_arr()I
 	.limit locals 0
 
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	bipush 14
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	bipush 28
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	iconst_0
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	iconst_0
 	iconst_5
 	isub
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	bipush 12
+	aload_0
 	putfield FindMaximum/test_arr [I
 
 	iconst_0
@@ -49,6 +55,7 @@
 .method public get_array()[I
 	.limit locals 0
 
+	aload_0
 	getfield FindMaximum/test_arr [I
 	areturn
 .end method
@@ -57,7 +64,7 @@
 	.limit locals 2
 
 	new FindMaximum
-	invokenonvirtual FindMaximum()V
+	invokenonvirtual <init>()V
 	astore_1
 
 	aload_1

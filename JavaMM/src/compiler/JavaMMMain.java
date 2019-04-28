@@ -336,7 +336,13 @@ class JavaMMMain
                 {
                     value = termSon.getType();
                     jWriter.println("\tnew " + termSon.getType());
-                    jWriter.println("\tinvokenonvirtual " + termSon.getType() + "()V");
+                    jWriter.print("\tinvokenonvirtual ");
+
+                    if(termSon.getType().equals(className))
+                        jWriter.println("<init>()V");
+                    else
+                        jWriter.println(termSon.getType() + "()V");
+
                 }
                 else
                 {
@@ -591,6 +597,8 @@ class JavaMMMain
 
                         if(variable != null)
                         {
+                            jWriter.println("\taload_0");
+
                             if(store)
                                 jWriter.println("\tputfield " + className + "/" + variable.getName() 
                                     + " " + getJVMType(variable.getType()));
@@ -1305,10 +1313,19 @@ class JavaMMMain
         funcTable.setReturnType(func.getReturnType());
         symbolTables.put(func.getName(), funcTable);
 
-        for(int i = 0; i < func.jjtGetNumChildren(); i++)
+        int index;
+
+        if(func.jjtGetNumChildren() > 0 && 
+            (func.jjtGetChild(0).toString().equals("Arg") || func.jjtGetChild(0).toString().equals("Var"))
+            && !(func.jjtGetChild(0).getType().equals("int") ||  func.jjtGetChild(0).getType().equals("boolean")))
+            index = 1;
+        else
+            index = 0;
+
+        for(int i = 0; i < func.jjtGetNumChildren(); i++, index++)
         {
             if(func.jjtGetChild(i).toString().equals("Arg") || func.jjtGetChild(i).toString().equals("Var"))
-                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false, i))
+                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false, index))
                     return false;
         }
 
