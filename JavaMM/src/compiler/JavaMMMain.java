@@ -512,6 +512,19 @@ class JavaMMMain
                 jWriter.println("\n" + label2 + ":");
                 break;
 
+            case "NOT":
+                label1 = generateRandomLabel(funcName); 
+                label2 = generateRandomLabel(funcName);
+
+                expressionToJVM(expression.jjtGetChild(0), funcName);
+                jWriter.println("\tifne " + label1);
+                jWriter.println("\ticonst_1");
+                jWriter.println("\tgoto " + label2);
+                jWriter.println("\n" + label1 + ":");
+                jWriter.println("\ticonst_0");
+                jWriter.println("\n" + label2 + ":");
+                break;
+
             case "TERM":
                 termToJVM(expression, funcName, false);
                 break;
@@ -885,6 +898,17 @@ class JavaMMMain
                 else
                 {
                     System.out.println("Operand(s) in expression of type AND don't evaluate to booleans in function "
+                        + funcName);
+                    return "error";
+                }
+
+            case "NOT":
+                if(expression.jjtGetNumChildren() == 1 
+                    && isTheSameType(evaluatesTo(expression.jjtGetChild(0), funcName), "boolean"))
+                    return "boolean";
+                else
+                {
+                    System.out.println("Operand in negated expression doesn't evaluate to boolean in function "
                         + funcName);
                     return "error";
                 }
