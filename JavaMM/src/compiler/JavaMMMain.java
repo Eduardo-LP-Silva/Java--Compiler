@@ -383,10 +383,18 @@ class JavaMMMain
 
             case "Member":
 
-                if(value.equals("all"))
-                    value = term.getName();
+                boolean staticMember;
 
-                functionCallToJVM(termSecondSon, funcName, value);
+                if(value.equals("all"))
+                {
+                    value = term.getName();
+                    staticMember = true;
+                }
+                else
+                    staticMember = false;
+                    
+
+                functionCallToJVM(termSecondSon, funcName, value, staticMember);
                 break;
 
             default:
@@ -395,7 +403,7 @@ class JavaMMMain
         }
     }
 
-    public static void functionCallToJVM(Node member, String funcName, String caller)
+    public static void functionCallToJVM(Node member, String funcName, String caller, boolean staticMember)
     {
         String[] argTypes;
         boolean localFunc;
@@ -425,7 +433,7 @@ class JavaMMMain
 
         String cmd = "invoke";
 
-        if(caller.equals("all"))
+        if(staticMember)
             cmd += "static ";
         else
             cmd += "virtual ";
@@ -548,9 +556,9 @@ class JavaMMMain
                 }
 
                 if(caller != null)
-                    functionCallToJVM(lhsChild, funcName, caller.getType());
+                    functionCallToJVM(lhsChild, funcName, caller.getType(), false);
                 else
-                    functionCallToJVM(lhsChild, funcName, lhs.getName());
+                    functionCallToJVM(lhsChild, funcName, lhs.getName(), true);
             }
         }
 

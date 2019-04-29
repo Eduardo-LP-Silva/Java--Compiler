@@ -8,25 +8,7 @@
 .end method
 
 .method public find_maximum([I)I
-	.limit locals 7
-
-	iconst_1
-	istore 5
-
-	iconst_2
-	istore 6
-
-	iload 5
-	iload 6
-	if_icmpge find_maximum4986
-	iconst_1
-	goto find_maximum9297
-
-find_maximum4986:
-	iconst_0
-
-find_maximum9297:
-	istore 7
+	.limit locals 4
 
 	iconst_1
 	istore 2
@@ -91,7 +73,7 @@ find_maximum9297:
 	aload 1
 	invokevirtual FindMaximum/get_array()[I
 	invokevirtual FindMaximum/find_maximum([I)I
-	invokevirtual ioPlus/printResult(I)V
+	invokestatic ioPlus/printResult(I)V
 	return
 .end method
 

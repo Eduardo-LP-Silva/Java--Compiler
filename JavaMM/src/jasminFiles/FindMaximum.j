@@ -73,7 +73,7 @@
 	aload 1
 	invokevirtual FindMaximum/get_array()[I
 	invokevirtual FindMaximum/find_maximum([I)I
-	invokevirtual ioPlus/printResult(I)V
+	invokestatic ioPlus/printResult(I)V
 	return
 .end method
 
