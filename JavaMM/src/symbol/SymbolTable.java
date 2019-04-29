@@ -107,6 +107,18 @@ public class SymbolTable
         return argsList;
     }
 
+    public String[] getVariablesList()
+    {
+        String[] varsList = new String[this.table.size()];
+        Set<Entry<String, Symbol>> varsSet = table.entrySet();
+        Iterator<Entry<String, Symbol>> varsIterator = varsSet.iterator();
+
+        for(int i = 0; varsIterator.hasNext(); i++)
+            varsList[i] = varsIterator.next().getValue().getType();
+
+        return varsList;
+    }
+
     public String getReturnType()
     {
         return returnType;

@@ -164,6 +164,11 @@ class JavaMMMain
         {
             int nLocals = function_table.getTable().size() + function_table.getArgs().size();
 
+            jWriter.println("\t.limit stack " +  nLocals); //TODO Check for arrays after
+
+            if(!function_table.getReturnType().equals("void"))
+                nLocals++;
+
             jWriter.println("\t.limit locals " + nLocals + "\n");
         }
 

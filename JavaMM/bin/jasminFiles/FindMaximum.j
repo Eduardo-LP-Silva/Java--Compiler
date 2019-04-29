@@ -7,73 +7,32 @@
 	return
 .end method
 
-.method public find_maximum([I)I
-	.limit locals 4
+.method public find_maximum(I)I
+	.limit stack 4
+	.limit locals 5
 
-	iconst_1
+	iconst_2
+	istore 1
+
+	bipush 10
 	istore 2
 
-	aload_1
+	iload 1
+	bipush 10
+	imul
 	istore 3
 
 	iload 3
 	ireturn
 .end method
 
-.method public build_test_arr()I
-	.limit locals 0
-
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	bipush 14
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	bipush 28
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	iconst_0
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	iconst_0
-	iconst_5
-	isub
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	bipush 12
-	aload_0
-	putfield FindMaximum/test_arr [I
-
-	iconst_0
-	ireturn
-.end method
-
-.method public get_array()[I
-	.limit locals 0
-
-	aload_0
-	getfield FindMaximum/test_arr [I
-	areturn
-.end method
-
 .method public static main([Ljava/lang/String;)V
-	.limit locals 2
+	.limit stack 1
+	.limit locals 1
 
-	new FindMaximum
-	invokenonvirtual <init>()V
-	astore 1
-
-	aload 1
-	invokevirtual FindMaximum/build_test_arr()I
-	aload 1
-	aload 1
-	invokevirtual FindMaximum/get_array()[I
-	invokevirtual FindMaximum/find_maximum([I)I
-	invokestatic ioPlus/printResult(I)V
+	aload_0
+	iconst_1
+	invokevirtual FindMaximum/find_maximum(I)I
 	return
 .end method
 
