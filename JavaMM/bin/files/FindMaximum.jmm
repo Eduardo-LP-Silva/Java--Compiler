@@ -6,6 +6,15 @@ class FindMaximum {
 		int maximum;
 		int value;
 
+		boolean a;
+		boolean b;
+		boolean c;
+
+		a = false;
+		b = true;
+
+		c = a && b;
+
 		i = 2;
 		maximum = 10;
 
@@ -16,7 +25,11 @@ class FindMaximum {
 
 	public static void main(String[] args) 
     {
-		this.find_maximum(1);
+			FindMaximum fm;
+
+			fm = new FindMaximum();
+
+			fm.find_maximum(1);
 	}
 
 }

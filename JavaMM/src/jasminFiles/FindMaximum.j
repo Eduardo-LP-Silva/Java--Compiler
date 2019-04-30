@@ -8,8 +8,27 @@
 .end method
 
 .method public find_maximum(I)I
-	.limit stack 4
-	.limit locals 5
+	.limit stack 7
+	.limit locals 8
+
+	iconst_0
+	istore 4
+
+	iconst_1
+	istore 5
+
+	iload 4
+	ifeq find_maximum9089
+	iload 5
+	ifeq find_maximum9089
+	iconst_1
+	goto find_maximum343
+
+find_maximum9089:
+	iconst_0
+
+find_maximum343:
+	istore 6
 
 	iconst_2
 	istore 1
@@ -27,10 +46,15 @@
 .end method
 
 .method public static main([Ljava/lang/String;)V
-	.limit stack 1
-	.limit locals 1
+	.limit stack 2
+	.limit locals 2
 
-	aload_0
+	new FindMaximum
+	dup
+	invokenonvirtual FindMaximum/<init>()V
+	astore 1
+
+	aload 1
 	iconst_1
 	invokevirtual FindMaximum/find_maximum(I)I
 	return

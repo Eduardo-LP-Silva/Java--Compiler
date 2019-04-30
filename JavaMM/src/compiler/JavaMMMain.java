@@ -341,13 +341,13 @@ class JavaMMMain
                 {
                     value = termSon.getType();
                     jWriter.println("\tnew " + termSon.getType());
+                    jWriter.println("\tdup");
                     jWriter.print("\tinvokenonvirtual ");
 
                     if(termSon.getType().equals(className))
-                        jWriter.println("<init>()V");
+                        jWriter.println(className + "/<init>()V");
                     else
-                        jWriter.println(termSon.getType() + "()V");
-
+                        jWriter.println(termSon.getType() + "/" + termSon.getType() + "()V");
                 }
                 else
                 {
@@ -956,6 +956,13 @@ class JavaMMMain
                     break;
 
                 case "this":
+
+                    if(funcName.equals("main"))
+                    {
+                        System.out.println("This can't be used in static function main");
+                        return "error";
+                    }
+                    
                     value = className;
                     break;
 
