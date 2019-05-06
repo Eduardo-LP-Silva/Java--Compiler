@@ -2,25 +2,50 @@ package files;
 
 class JVMTest 
 {
-    public int find_maximum(int arr) {
+	int[] test_arr;
+
+	public int find_maximum(int[] arr) 
+	{
 		int i;
 		int maximum;
 		int value;
 
-		i = 2;
-		maximum = 10;
+		i = 1;
+		maximum = arr[0];
+		while (i < arr.length) {
+			value = arr[i];
+			if (maximum < value) {
+				maximum = value;
+			} else {
+			}
+			i = i + 1;
+		}
 
-		value = i * 10;
-		
-		return value;
+		return maximum;
 	}
 
-	public static void main(String[] args) 
-    {
+	public int build_test_arr() {
+		test_arr = new int[5];
+		test_arr[0] = 14;
+		test_arr[1] = 28;
+		test_arr[2] = 0;
+		test_arr[3] = 0-5; // No unary minus in Java--
+		test_arr[4] = 12;
+
+		return 0;
+	}
+
+	public int[] get_array() {
+		return test_arr;
+	}
+
+	public static void main(String[] args) {
 		JVMTest fm;
 
 		fm = new JVMTest();
+		fm.build_test_arr();
 
-		fm.find_maximum(1);
+	
+		//ioPlus.printResult(fm.find_maximum(fm.get_array()));
 	}
 }

@@ -62,7 +62,7 @@ class JavaMMMain
         {
             PrintWriter print_writer;
 
-            String filename = "jasminFiles";
+            String filename = "jasmin";
             File file = new File(filename);
 
             if(!file.exists())
@@ -211,7 +211,7 @@ class JavaMMMain
 
     public static void returnToJVM(Node returnNode, String funcName)
     {
-        expressionToJVM(returnNode.jjtGetChild(0), funcName);
+        expressionToJVM(returnNode.jjtGetChild(0), funcName, null);
     }
 
     public static void getJVMInt(int constant)
@@ -258,11 +258,11 @@ class JavaMMMain
                 break;
 
             case "While":
-                //TODO Complete
+                whileToJVM(statement, funcName);
                 break;
 
             case "TERM":
-                termToJVM(statement, funcName, false);
+                termToJVM(statement, funcName, false, null);
                 break;
 
             case "EQUALS":
@@ -279,7 +279,23 @@ class JavaMMMain
         }
     }
 
-    public static void termToJVM(Node term, String funcName, boolean store)
+    public static void ifToJVM(Node ifNode, String funcName)
+    {
+        
+    }
+
+    public static void whileToJVM(Node whileNode, String funcName)
+    {
+        String conditionLabel = generateRandomLabel(funcName), endLabel = generateRandomLabel(funcName);
+
+        jWriter.println("\n" + conditionLabel + ":");
+        expressionToJVM(whileNode.jjtGetChild(0), funcName, endLabel);
+        statementToJVM(whileNode.jjtGetChild(1).jjtGetChild(0), funcName);
+        jWriter.println("goto " + conditionLabel);
+        jWriter.println("\n" + endLabel + ":");
+    }
+
+    public static void termToJVM(Node term, String funcName, boolean store, String conditionalLabel)
     {
         String termName = term.getName();
         String value = "";
@@ -332,7 +348,7 @@ class JavaMMMain
                 if(termSon.jjtGetNumChildren() != 0)
                 {
                     value = evaluatesTo(termSon.jjtGetChild(0), funcName);
-                    expressionToJVM(termSon.jjtGetChild(0), funcName);
+                    expressionToJVM(termSon.jjtGetChild(0), funcName, conditionalLabel);
                     break;
                 }
 
@@ -352,7 +368,9 @@ class JavaMMMain
                 else
                 {
                     value = "int[]";
-                    //TODO Check for new array
+
+                    expressionToJVM(termSon.jjtGetChild(0).jjtGetChild(0), funcName, null);
+                    jWriter.println("\tnewarray int");
                 }
 
                 break;
@@ -383,7 +401,8 @@ class JavaMMMain
         switch(termSecondSon.toString())
         {
             case "ArrayAccs":
-                //TODO Complete
+                expressionToJVM(termSecondSon.jjtGetChild(0), funcName, null);
+                jWriter.println("\tiaload");
                 break;
 
             case "Member":
@@ -398,8 +417,11 @@ class JavaMMMain
                 else
                     staticMember = false;
                     
+                if(termSecondSon.getName().equals("length"))
+                    jWriter.println("\tarraylength");
+                else
+                    functionCallToJVM(termSecondSon, funcName, value, staticMember);
 
-                functionCallToJVM(termSecondSon, funcName, value, staticMember);
                 break;
 
             default:
@@ -433,7 +455,7 @@ class JavaMMMain
             if(!localFunc)
                 argTypes[i] = evaluatesTo(member.jjtGetChild(i), funcName);
 
-            expressionToJVM(member.jjtGetChild(i), funcName);
+            expressionToJVM(member.jjtGetChild(i), funcName, null);
         }
 
         String cmd = "invoke";
@@ -457,81 +479,111 @@ class JavaMMMain
         jWriter.print("\t" + cmd + ")" + returnType + "\n");
     }
 
-    public static void expressionToJVM(Node expression, String funcName)
+    public static void expressionToJVM(Node expression, String funcName, String conditionalLabel)
     {
         String label1, label2;
 
         switch(expression.toString())
         {
             case "ADD":
-                expressionToJVM(expression.jjtGetChild(0), funcName);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\tiadd");
                 break;
 
             case "SUB":
-                expressionToJVM(expression.jjtGetChild(0), funcName);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\tisub");
                 break;
 
             case "DIV":
-                expressionToJVM(expression.jjtGetChild(0), funcName);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\tidiv");
                 break;
 
             case "MUL":
-                expressionToJVM(expression.jjtGetChild(0), funcName);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\timul");
                 break;
 
             case "AND":
-                label1 = generateRandomLabel(funcName); 
-                label2 = generateRandomLabel(funcName);
+
+                if(conditionalLabel != null)
+                    label1 = conditionalLabel;
+                else
+                    label1 = generateRandomLabel(funcName); 
                 
-                expressionToJVM(expression.jjtGetChild(0), funcName);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
                 jWriter.println("\tifeq " + label1);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\tifeq " + label1);
-                jWriter.println("\ticonst_1");
-                jWriter.println("\tgoto " + label2);
-                jWriter.println("\n" + label1 + ":");
-                jWriter.println("\ticonst_0");
-                jWriter.println("\n" + label2 + ":");
+
+                if(conditionalLabel == null)
+                {
+                    label2 = generateRandomLabel(funcName);
+
+                    jWriter.println("\ticonst_1");
+                    jWriter.println("\tgoto " + label2);
+                    jWriter.println("\n" + label1 + ":");
+                    jWriter.println("\ticonst_0");
+                    jWriter.println("\n" + label2 + ":");
+                }
+                
                 break;
 
 
             case "LOWER":
-                label1 = generateRandomLabel(funcName); 
-                label2 = generateRandomLabel(funcName);
 
-                expressionToJVM(expression.jjtGetChild(0), funcName);
-                expressionToJVM(expression.jjtGetChild(1), funcName);
+                if(conditionalLabel != null)
+                    label1 = conditionalLabel;
+                else
+                    label1 = generateRandomLabel(funcName);  
+                
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
                 jWriter.println("\tif_icmpge " + label1);
-                jWriter.println("\ticonst_1");
-                jWriter.println("\tgoto " + label2);
-                jWriter.println("\n" + label1 + ":");
-                jWriter.println("\ticonst_0");
-                jWriter.println("\n" + label2 + ":");
+
+                if(conditionalLabel == null)
+                {
+                    label2 = generateRandomLabel(funcName);
+
+                    jWriter.println("\ticonst_1");
+                    jWriter.println("\tgoto " + label2);
+                    jWriter.println("\n" + label1 + ":");
+                    jWriter.println("\ticonst_0");
+                    jWriter.println("\n" + label2 + ":");
+                }
+                
                 break;
 
             case "NOT":
-                label1 = generateRandomLabel(funcName); 
-                label2 = generateRandomLabel(funcName);
 
-                expressionToJVM(expression.jjtGetChild(0), funcName);
+                if(conditionalLabel != null)
+                    label1 = conditionalLabel;
+                else
+                    label1 = generateRandomLabel(funcName);
+
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
                 jWriter.println("\tifne " + label1);
-                jWriter.println("\ticonst_1");
-                jWriter.println("\tgoto " + label2);
-                jWriter.println("\n" + label1 + ":");
-                jWriter.println("\ticonst_0");
-                jWriter.println("\n" + label2 + ":");
+
+                if(conditionalLabel == null)
+                {
+                    label2 = generateRandomLabel(funcName);
+
+                    jWriter.println("\ticonst_1");
+                    jWriter.println("\tgoto " + label2);
+                    jWriter.println("\n" + label1 + ":");
+                    jWriter.println("\ticonst_0");
+                    jWriter.println("\n" + label2 + ":");
+                }
+                
                 break;
 
             case "TERM":
-                termToJVM(expression, funcName, false);
+                termToJVM(expression, funcName, false, conditionalLabel);
                 break;
 
             default:
@@ -544,8 +596,8 @@ class JavaMMMain
     {
         Node lhs = equals.jjtGetChild(0), expression = equals.jjtGetChild(1);
         
-        expressionToJVM(expression, funcName);
-        termToJVM(lhs, funcName, true);
+        expressionToJVM(expression, funcName, null);
+        termToJVM(lhs, funcName, true, null);
 
         if(lhs.jjtGetNumChildren() > 0)
         {
