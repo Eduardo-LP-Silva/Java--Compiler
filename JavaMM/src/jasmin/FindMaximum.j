@@ -8,33 +8,48 @@
 .end method
 
 .method public find_maximum([I)I
-	.limit stack 5
-	.limit locals 6
-
-	bipush 10
-	istore 5
+	.limit stack 4
+	.limit locals 5
 
 	iconst_1
 	istore 2
 
+	aload_1
 	iconst_0
+	iaload
 	istore 3
 
-	iconst_1
+
+find_maximum5087:
+	iload 2
+	aload_1
+	arraylength
+	if_icmpge find_maximum9299
+	aload_1
+	iload 2
+	iaload
 	istore 4
 
-
-find_maximum3716:
-	iload 5
-	bipush 10
-	if_icmpge find_maximum7800
-	iconst_0
+	iload 3
+	iload 4
+	if_icmpge find_maximum6824
+	iload 4
 	istore 3
 
-goto find_maximum3716
+	goto find_maximum1947
 
-find_maximum7800:
+find_maximum6824:
+
+find_maximum1947:
+	iload 2
 	iconst_1
+	iadd
+	istore 2
+
+	goto find_maximum5087
+
+find_maximum9299:
+	iload 3
 	ireturn
 .end method
 
@@ -42,42 +57,42 @@ find_maximum7800:
 	.limit stack 0
 	.limit locals 1
 
+	aload_0
 	iconst_5
 	newarray int
-	aload_0
 	putfield FindMaximum/test_arr [I
 
+	aload_0
+	getfield FindMaximum/test_arr [I
+	iconst_0
 	bipush 14
-	aload_0
-	putfield FindMaximum/test_arr [I
-	iconst_0
-	iaload
+	iastore
 
-	bipush 28
 	aload_0
-	putfield FindMaximum/test_arr [I
+	getfield FindMaximum/test_arr [I
 	iconst_1
-	iaload
+	bipush 28
+	iastore
 
-	iconst_0
 	aload_0
-	putfield FindMaximum/test_arr [I
+	getfield FindMaximum/test_arr [I
 	iconst_2
-	iaload
+	iconst_0
+	iastore
 
+	aload_0
+	getfield FindMaximum/test_arr [I
+	iconst_3
 	iconst_0
 	iconst_5
 	isub
-	aload_0
-	putfield FindMaximum/test_arr [I
-	iconst_3
-	iaload
+	iastore
 
-	bipush 12
 	aload_0
-	putfield FindMaximum/test_arr [I
+	getfield FindMaximum/test_arr [I
 	iconst_4
-	iaload
+	bipush 12
+	iastore
 
 	iconst_0
 	ireturn

@@ -108,10 +108,6 @@ class JavaMMMain
 
             switch (child.toString())
             {
-                case "Var":
-                    //jWriter.println(child.getType() + " " + child.getName() + ";\n"); //Check if correct
-                    break;
-
                 case "Main":
                 case "Method":
                     usedLabels.clear();
@@ -254,7 +250,7 @@ class JavaMMMain
         switch (statement.toString())
         {
             case "If":
-                //TODO Complete
+                ifToJVM(statement, funcName);
                 break;
 
             case "While":
@@ -262,7 +258,7 @@ class JavaMMMain
                 break;
 
             case "TERM":
-                termToJVM(statement, funcName, false, null);
+                termToJVM(statement, funcName, false, true, null);
                 break;
 
             case "EQUALS":
@@ -271,7 +267,6 @@ class JavaMMMain
 
             case "Else":
             case "Then":
-                //TODO Complete
                 break;
 
             default:
@@ -281,7 +276,24 @@ class JavaMMMain
 
     public static void ifToJVM(Node ifNode, String funcName)
     {
-        
+        String endLabel = generateRandomLabel(funcName), elseLabel = generateRandomLabel(funcName);
+
+        expressionToJVM(ifNode.jjtGetChild(0), funcName, elseLabel);
+
+        Node then = ifNode.jjtGetChild(1);
+
+        for(int i = 0; i < then.jjtGetNumChildren(); i++)
+            statementToJVM(then.jjtGetChild(i), funcName);
+
+        jWriter.println("\tgoto " + endLabel);
+        jWriter.println("\n" + elseLabel + ":");
+
+        Node elseNode = ifNode.jjtGetChild(2);
+
+        for(int i = 0; i < elseNode.jjtGetNumChildren(); i++)
+            statementToJVM(elseNode.jjtGetChild(i), funcName);
+
+        jWriter.println("\n" + endLabel + ":");
     }
 
     public static void whileToJVM(Node whileNode, String funcName)
@@ -290,12 +302,17 @@ class JavaMMMain
 
         jWriter.println("\n" + conditionLabel + ":");
         expressionToJVM(whileNode.jjtGetChild(0), funcName, endLabel);
-        statementToJVM(whileNode.jjtGetChild(1).jjtGetChild(0), funcName);
-        jWriter.println("goto " + conditionLabel);
+
+        Node then = whileNode.jjtGetChild(1);
+
+        for(int i = 0; i < then.jjtGetNumChildren(); i++)
+            statementToJVM(then.jjtGetChild(i), funcName);
+
+        jWriter.println("\tgoto " + conditionLabel);
         jWriter.println("\n" + endLabel + ":");
     }
 
-    public static void termToJVM(Node term, String funcName, boolean store, String conditionalLabel)
+    public static void termToJVM(Node term, String funcName, boolean store, boolean loadClass, String conditionalLabel)
     {
         String termName = term.getName();
         String value = "";
@@ -331,7 +348,7 @@ class JavaMMMain
                     catch(NumberFormatException nfe)
                     {
                         value = identifierEvaluatesTo(term, funcName, true, false);
-                        variableToJVM(term, funcName, store);
+                        variableToJVM(term, funcName, store, loadClass);
                     }
             }
         }
@@ -402,7 +419,9 @@ class JavaMMMain
         {
             case "ArrayAccs":
                 expressionToJVM(termSecondSon.jjtGetChild(0), funcName, null);
-                jWriter.println("\tiaload");
+
+                if(!store)
+                    jWriter.println("\tiaload");
                 break;
 
             case "Member":
@@ -583,7 +602,7 @@ class JavaMMMain
                 break;
 
             case "TERM":
-                termToJVM(expression, funcName, false, conditionalLabel);
+                termToJVM(expression, funcName, false, true, conditionalLabel);
                 break;
 
             default:
@@ -594,41 +613,52 @@ class JavaMMMain
 
     public static void equalsToJVM(Node equals, String funcName)
     {
-        Node lhs = equals.jjtGetChild(0), expression = equals.jjtGetChild(1);
-        
-        expressionToJVM(expression, funcName, null);
-        termToJVM(lhs, funcName, true, null);
+        Node lhs = equals.jjtGetChild(0), expression = equals.jjtGetChild(1), lhsChild;
 
+        //aload_0 if lhs is class member
+        //if lhs is ArrayAccs then switch lhs with expression (1st lhs then expression) 
+
+        if(symbolTables.get(className).getTable().get(lhs.getName()) != null)
+            jWriter.println("\taload_0");
+
+        if(lhs.jjtGetNumChildren() > 0 && lhs.jjtGetChild(0).toString().equals("ArrayAccs"))
+        {
+            termToJVM(lhs, funcName, true, false, null);
+            expressionToJVM(expression, funcName, null);
+            jWriter.println("\tiastore");
+        }
+        else
+        {
+            expressionToJVM(expression, funcName, null);
+            termToJVM(lhs, funcName, true, false, null);
+        }
+            
         if(lhs.jjtGetNumChildren() > 0)
         {
-            Node lhsChild = lhs.jjtGetChild(0);
+            lhsChild  = lhs.jjtGetChild(0);
             
             switch(lhsChild.toString())
             {
-                case "ArrayAccs":
-                    //TODO Complete;
-                    break;
-
                 case "Member":
-                SymbolTable funcST = symbolTables.get(funcName);
-                Symbol caller;
-
-                caller = funcST.getTable().get(lhs.getName());
-
-                if(caller == null)
-                    caller = funcST.getArgs().get(lhs.getName());
-
-                if(caller == null)
-                {
-                    funcST = symbolTables.get(className);
+                    SymbolTable funcST = symbolTables.get(funcName);
+                    Symbol caller;
 
                     caller = funcST.getTable().get(lhs.getName());
-                }
 
-                if(caller != null)
-                    functionCallToJVM(lhsChild, funcName, caller.getType(), false);
-                else
-                    functionCallToJVM(lhsChild, funcName, lhs.getName(), true);
+                    if(caller == null)
+                        caller = funcST.getArgs().get(lhs.getName());
+
+                    if(caller == null)
+                    {
+                        funcST = symbolTables.get(className);
+
+                        caller = funcST.getTable().get(lhs.getName());
+                    }
+
+                    if(caller != null)
+                        functionCallToJVM(lhsChild, funcName, caller.getType(), false);
+                    else
+                        functionCallToJVM(lhsChild, funcName, lhs.getName(), true);
             }
         }
 
@@ -651,7 +681,7 @@ class JavaMMMain
         return label;
     }
 
-    public static void variableToJVM(Node identifier, String funcName, boolean store)
+    public static void variableToJVM(Node identifier, String funcName, boolean store, boolean loadClass)
     {
         SymbolTable symbolTable = symbolTables.get(funcName);
         Symbol variable;
@@ -675,9 +705,11 @@ class JavaMMMain
 
                         if(variable != null)
                         {
-                            jWriter.println("\taload_0");
+                            if(loadClass)
+                                jWriter.println("\taload_0");
 
-                            if(store)
+                            if(store && !(identifier.jjtGetNumChildren() > 0 
+                                && identifier.jjtGetChild(0).toString().equals("ArrayAccs")))
                                 jWriter.println("\tputfield " + className + "/" + variable.getName() 
                                     + " " + getJVMType(variable.getType()));
                             else
