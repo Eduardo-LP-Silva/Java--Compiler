@@ -140,6 +140,22 @@ class JavaMMMain
         }
     }
 
+    public static int stackNum(Node child) {
+        // Node child = classNode.jjtGetChild(i);
+        int countStack = 0;
+        switch (child.toString())
+            {
+                case "int":
+                    countStack++;
+                    break;
+                case "+":
+                    countStack--;
+                default:
+                    // see childs
+            }
+        return countStack;
+    }
+
     public static void functionToJVM(Node function)
     {
         int children = function.jjtGetNumChildren();
