@@ -1,6 +1,7 @@
 .class public FindMaximum
 .super java/lang/Object
 
+.field test_arr [I
 .method public <init>()V
 	aload_0
 	invokenonvirtual java/lang/Object/<init>()V
@@ -8,7 +9,7 @@
 .end method
 
 .method public find_maximum([I)I
-	.limit stack 4
+	.limit stack 999
 	.limit locals 5
 
 	iconst_1
@@ -20,11 +21,11 @@
 	istore 3
 
 
-find_maximum5087:
+find_maximum173:
 	iload 2
 	aload_1
 	arraylength
-	if_icmpge find_maximum9299
+	if_icmpge find_maximum8903
 	aload_1
 	iload 2
 	iaload
@@ -32,29 +33,29 @@ find_maximum5087:
 
 	iload 3
 	iload 4
-	if_icmpge find_maximum6824
+	if_icmpge find_maximum1863
 	iload 4
 	istore 3
 
-	goto find_maximum1947
+	goto find_maximum4384
 
-find_maximum6824:
+find_maximum1863:
 
-find_maximum1947:
+find_maximum4384:
 	iload 2
 	iconst_1
 	iadd
 	istore 2
 
-	goto find_maximum5087
+	goto find_maximum173
 
-find_maximum9299:
+find_maximum8903:
 	iload 3
 	ireturn
 .end method
 
 .method public build_test_arr()I
-	.limit stack 0
+	.limit stack 999
 	.limit locals 1
 
 	aload_0
@@ -99,7 +100,7 @@ find_maximum9299:
 .end method
 
 .method public get_array()[I
-	.limit stack 0
+	.limit stack 999
 	.limit locals 1
 
 	aload_0
@@ -108,7 +109,7 @@ find_maximum9299:
 .end method
 
 .method public static main([Ljava/lang/String;)V
-	.limit stack 2
+	.limit stack 999
 	.limit locals 2
 
 	new FindMaximum

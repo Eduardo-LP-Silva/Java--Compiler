@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Map.Entry;
+import java.util.Iterator;
 
 class JavaMMMain
 {
@@ -96,7 +98,23 @@ class JavaMMMain
 
         jWriter.println(".class public " + className);
         jWriter.println(extension);
-        jWriter.println(".method public <init>()V");
+
+        Set<Entry<String, Symbol>> varsSet;
+        Iterator<Entry<String, Symbol>> varsIterator;
+        Entry<String, Symbol> var;
+
+        varsSet = symbolTables.get(className).getTable().entrySet();
+        varsIterator = varsSet.iterator();
+
+        while(varsIterator.hasNext())
+        {
+            var = varsIterator.next();
+
+            jWriter.println(".field " + var.getKey() + " " + getJVMType(var.getValue().getType()));
+        }
+
+
+        jWriter.println("\n.method public <init>()V");
         jWriter.println("\taload_0");
         jWriter.println("\tinvokenonvirtual java/lang/Object/<init>()V");
         jWriter.println("\treturn");
@@ -160,7 +178,7 @@ class JavaMMMain
         {
             int nLocals = function_table.getTable().size() + function_table.getArgs().size();
 
-            jWriter.println("\t.limit stack " +  nLocals); //TODO Check for arrays after
+            jWriter.println("\t.limit stack " +  999);
 
             if(!function_table.getReturnType().equals("void"))
                 nLocals++;
@@ -1056,7 +1074,7 @@ class JavaMMMain
                     {
                         Integer.parseInt(termName); //Integer
 
-                        return "int"; //TODO change to value =
+                        return "int";
                     } //Variable
                     catch(NumberFormatException nfe)
                     {

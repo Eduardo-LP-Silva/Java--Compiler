@@ -4,8 +4,7 @@ class JVMTest
 {
 	int[] test_arr;
 
-	public int find_maximum(int[] arr) 
-	{
+	public int find_maximum(int[] arr) {
 		int i;
 		int maximum;
 		int value;
@@ -45,7 +44,6 @@ class JVMTest
 		fm = new JVMTest();
 		fm.build_test_arr();
 
-	
-		//ioPlus.printResult(fm.find_maximum(fm.get_array()));
+		System.out.println(fm.find_maximum(fm.get_array()));
 	}
 }

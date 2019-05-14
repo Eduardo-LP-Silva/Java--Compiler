@@ -71,7 +71,6 @@ public class SymbolTable
         Iterator<Entry<String, Symbol>> argsIterator;
         Entry<String, Symbol> arg;
 
-
         System.out.println("\tArguments\n");
 
         argsSet = args.entrySet();
