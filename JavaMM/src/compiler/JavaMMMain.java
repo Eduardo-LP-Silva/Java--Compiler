@@ -1,6 +1,7 @@
 package compiler;
 
 import ast.*;
+import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import symbol.*;
 import java.util.Hashtable;
 import java.io.FileInputStream;
@@ -142,17 +143,37 @@ class JavaMMMain
 
     public static int stackNum(Node child) {
         // Node child = classNode.jjtGetChild(i);
-        int countStack = 0;
-        switch (child.toString())
-            {
-                case "int":
-                    countStack++;
-                    break;
-                case "+":
-                    countStack--;
-                default:
-                    // see childs
-            }
+        int countStack = 1;
+        countStack = auxStackNum(countStack, child);
+        return countStack;
+    }
+
+    public static int stackNum(Node classNode) {
+        // Node child = classNode.jjtGetChild(i);
+        int countStack = 1;
+        for(int i=0; i<classNode.jjtGetNumChildren(); i++) {
+
+            switch (classNode.jjtGetChild(i).toString())
+                {
+                    case "int":
+                        countStack++;
+                        break;
+                    case "+":
+                        countStack--;
+                        break;
+                    case "-":
+                        countStack--;
+                        break;
+                    case "*":
+                        countStack--;
+                        break;
+                    case "/":
+                        countStack--;
+                        break;
+                    default:
+                        break;
+                }
+        }
         return countStack;
     }
 
