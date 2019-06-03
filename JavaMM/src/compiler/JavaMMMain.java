@@ -140,13 +140,7 @@ class JavaMMMain
 
         }
     }
-
-    public static int stackNum(Node child) {
-        // Node child = classNode.jjtGetChild(i);
-        int countStack = 1;
-        countStack = auxStackNum(countStack, child);
-        return countStack;
-    }
+    
 
     public static int stackNum(Node classNode) {
         // Node child = classNode.jjtGetChild(i);
