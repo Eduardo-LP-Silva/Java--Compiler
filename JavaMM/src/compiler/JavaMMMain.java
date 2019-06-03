@@ -140,7 +140,7 @@ class JavaMMMain
 
         }
     }
-    
+
 
     public static int stackNum(Node classNode) {
         // Node child = classNode.jjtGetChild(i);
@@ -209,7 +209,7 @@ class JavaMMMain
         {
             int nLocals = function_table.getTable().size() + function_table.getArgs().size();
 
-            jWriter.println("\t.limit stack " +  999);
+            jWriter.println("\t.limit stack " +  stackNum(function));
 
             if(!function_table.getReturnType().equals("void"))
                 nLocals++;
