@@ -1,1 +1,1 @@
-java compiler.JavaMMMain files/FindMaximum.jmm
+java compiler.JavaMMMain files/Turing.jmm jasmin/Turing.j

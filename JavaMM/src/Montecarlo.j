@@ -1,6 +1,7 @@
 .class public MonteCarloPi
 .super java/lang/Object
 
+
 .method public <init>()V
 	aload_0
 	invokenonvirtual java/lang/Object/<init>()V
@@ -15,42 +16,42 @@
 	bipush 100
 	isub
 	bipush 100
-	invokestatic MathUtils/random(I I)V
-	istore 0
+	invokestatic MathUtils/random(II)I
+	istore 1
 
 	iconst_0
 	bipush 100
 	isub
 	bipush 100
-	invokestatic MathUtils/random(I I)V
-	istore 1
+	invokestatic MathUtils/random(II)I
+	istore 2
 
-	iload 0
-	iload 0
+	iload 1
+	iload 1
 	imul
-	iload 1
-	iload 1
+	iload 2
+	iload 2
 	imul
 	iadd
 	bipush 100
 	idiv
+	istore 4
+
+	iload 4
+	bipush 100
+	if_icmpge performSingleEstimate(0)2
+	iconst_1
 	istore 3
 
-	iload 3
-	bipush 100
-	if_icmpge performSingleEstimate8890
-	iconst_1
-	istore 2
+	goto performSingleEstimate(0)1
 
-	goto performSingleEstimate913
-
-performSingleEstimate8890:
+performSingleEstimate(0)2:
 	iconst_0
-	istore 2
+	istore 3
 
 
-performSingleEstimate913:
-	iload 2
+performSingleEstimate(0)1:
+	iload 3
 	ireturn
 .end method
 
@@ -59,44 +60,45 @@ performSingleEstimate913:
 	.limit locals 5
 
 	iconst_0
-	istore 2
-
-	iconst_0
-	istore 1
-
-
-estimatePi100517:
-	iload 2
-	iload_0
-	if_icmpge estimatePi1003067
-	aload_0
-	invokevirtual MonteCarloPi/performSingleEstimate()Z
-	iload 1
-	iconst_1
-	iadd
-	istore 1
-
-	goto estimatePi1001017
-
-estimatePi1002564:
-
-estimatePi1001017:
-	iload 2
-	iconst_1
-	iadd
-	istore 2
-
-	goto estimatePi100517
-
-estimatePi1003067:
-	sipush 400
-	iload 1
-	imul
-	iload_0
-	idiv
 	istore 3
 
+	iconst_0
+	istore 2
+
+
+estimatePi100(1)1:
 	iload 3
+	iload_1
+	if_icmpge estimatePi100(1)2
+	aload_0
+	invokevirtual MonteCarloPi/performSingleEstimate()Z
+	ifeq estimatePi100(1)4
+	iload 2
+	iconst_1
+	iadd
+	istore 2
+
+	goto estimatePi100(1)3
+
+estimatePi100(1)4:
+
+estimatePi100(1)3:
+	iload 3
+	iconst_1
+	iadd
+	istore 3
+
+	goto estimatePi100(1)1
+
+estimatePi100(1)2:
+	sipush 400
+	iload 2
+	imul
+	iload_1
+	idiv
+	istore 4
+
+	iload 4
 	ireturn
 .end method
 
@@ -104,7 +106,7 @@ estimatePi1003067:
 	.limit stack 999
 	.limit locals 3
 
-	invokestatic ioPlus/requestNumber()V
+	invokestatic ioPlus/requestNumber()I
 	istore 2
 
 	new MonteCarloPi

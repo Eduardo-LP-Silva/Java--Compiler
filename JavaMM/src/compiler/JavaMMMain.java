@@ -1,7 +1,6 @@
 package compiler;
 
 import ast.*;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import symbol.*;
 import java.util.Hashtable;
 import java.io.FileInputStream;
@@ -9,8 +8,6 @@ import java.util.Set;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
 import java.util.Map.Entry;
 import java.util.Iterator;
 
@@ -19,17 +16,19 @@ class JavaMMMain
     private static Hashtable<String, SymbolTable> symbolTables;
     private static String className;
     private static PrintWriter jWriter;
-    private static ArrayList<String> usedLabels; 
+    private static int label;
+    private static String extendingClass;
+
     public static void main(String[] args) throws Exception
     {
-        if (args.length < 1)
+        if (args.length < 2)
         {
-            System.out.println("Usage: JavaMMMain <filename>");
+            System.out.println("Usage: JavaMMMain <input_filename> <output_filename>");
             System.exit(1);
         }
 
         symbolTables = new Hashtable<String, SymbolTable>();
-        usedLabels = new ArrayList<String>();
+        label = 0;
 
         JavaMM parser = new JavaMM(new FileInputStream(args[0]));
         SimpleNode root = parser.Program();
@@ -44,9 +43,12 @@ class JavaMMMain
             if(semanticAnalysis(root))
                 System.out.println("Semantic analysis complete");
             else
+            {
+                System.out.println("Semantic error");
                 return;
-
-            jWriter = getJFile();
+            }
+                
+            jWriter = getJFile(args[1]);
 
             if(jWriter == null)
                 return;
@@ -56,26 +58,27 @@ class JavaMMMain
             System.out.println("JVM file generated");
             jWriter.close();
         }
-
+        else
+            System.out.println("Couldn't build symbol tables");
     }
 
-    public static PrintWriter getJFile()
+    public static PrintWriter getJFile(String outputFile)
     {
         try
         {
             PrintWriter print_writer;
+            File file;
 
-            String filename = "jasmin";
-            File file = new File(filename);
-
-            if(!file.exists())
-                file.mkdirs();
-
-            File jasmin_file = new File(filename + '/' + className + ".j");
+            File jasmin_file = new File(outputFile);
 
             if(!jasmin_file.exists())
-                jasmin_file.createNewFile();
+            {
+                System.out.println("Couldn't find file, creating new one...");
 
+                jasmin_file = new File(outputFile);
+                jasmin_file.createNewFile();
+            }
+                
             print_writer = new PrintWriter(jasmin_file);
 
             return print_writer;
@@ -95,10 +98,10 @@ class JavaMMMain
         if(classNode.jjtGetNumChildren() > 0 && classNode.jjtGetChild(0).toString().equals("Extends"))
             extension = classNode.jjtGetChild(0).getName();
         else
-            extension = ".super java/lang/Object\n";
+            extension = "java/lang/Object";
 
         jWriter.println(".class public " + className);
-        jWriter.println(extension);
+        jWriter.println(".super " + extension + "\n");
 
         Set<Entry<String, Symbol>> varsSet;
         Iterator<Entry<String, Symbol>> varsIterator;
@@ -111,13 +114,13 @@ class JavaMMMain
         {
             var = varsIterator.next();
 
-            jWriter.println(".field " + var.getKey() + " " + getJVMType(var.getValue().getType()));
+            jWriter.println(".field '" + var.getKey() + "' " + getJVMType(var.getValue().getType()));
         }
 
 
         jWriter.println("\n.method public <init>()V");
         jWriter.println("\taload_0");
-        jWriter.println("\tinvokenonvirtual java/lang/Object/<init>()V");
+        jWriter.println("\tinvokenonvirtual " + extension + "/<init>()V");
         jWriter.println("\treturn");
         jWriter.println(".end method\n");
 
@@ -129,8 +132,7 @@ class JavaMMMain
             {
                 case "Main":
                 case "Method":
-                    usedLabels.clear();
-                    usedLabels.trimToSize();
+                    label = 0;
                     functionToJVM(child);
                     break;
 
@@ -141,7 +143,6 @@ class JavaMMMain
         }
     }
 
-
     public static int stackNum(Node classNode) {
         // Node child = classNode.jjtGetChild(i);
         int countStack = 1;
@@ -149,43 +150,43 @@ class JavaMMMain
 
             switch (classNode.jjtGetChild(i).toString())
                 {
-                    case "int":
+                    case "Var":
                         countStack++;
                         break;
-                    case "+":
+                    case "ADD":
                         countStack--;
                         break;
-                    case "-":
+                    case "SUB":
                         countStack--;
                         break;
-                    case "*":
+                    case "MUL":
                         countStack--;
                         break;
-                    case "/":
+                    case "DIV":
                         countStack--;
                         break;
                     default:
                         break;
                 }
         }
-        return countStack;
+        return countStack*8;
     }
 
     public static void functionToJVM(Node function)
     {
         int children = function.jjtGetNumChildren();
 
-        String funcName = function.getName();
+        String funcName = getFunctionName(function);
 
         int i = 0;
 
         jWriter.print(".method public ");
 
-        if(funcName.equals("main"))
+        if(funcName.equals("main(1)"))
             jWriter.println("static main([Ljava/lang/String;)V");
         else
         {
-            jWriter.print(funcName + "(");
+            jWriter.print(function.getName() + "(");
 
             for(; i < children; i++)
             {
@@ -194,10 +195,7 @@ class JavaMMMain
                 if(arg.toString().equals("Arg"))
                     jWriter.print(getJVMType(arg.getType()));
                 else
-                    break;
-
-                if(i + 1 < children && function.jjtGetChild(i + 1).toString().equals("Arg"))
-                    jWriter.print(" ");
+                    break;            
             }
 
             jWriter.print(")" + getJVMType(function.getReturnType()) + "\n");
@@ -209,7 +207,7 @@ class JavaMMMain
         {
             int nLocals = function_table.getTable().size() + function_table.getArgs().size();
 
-            jWriter.println("\t.limit stack " +  stackNum(function));
+            jWriter.println("\t.limit stack " +  999);
 
             if(!function_table.getReturnType().equals("void"))
                 nLocals++;
@@ -256,7 +254,7 @@ class JavaMMMain
 
     public static void returnToJVM(Node returnNode, String funcName)
     {
-        expressionToJVM(returnNode.jjtGetChild(0), funcName, null);
+        expressionToJVM(returnNode.jjtGetChild(0), funcName, null, false);
     }
 
     public static void getJVMInt(int constant)
@@ -273,7 +271,13 @@ class JavaMMMain
             return;
         }
 
-        jWriter.println("\tsipush " + constant);
+        if(constant < 32768)
+        {
+            jWriter.println("\tsipush " + constant);
+            return;
+        }
+
+        jWriter.println("\tldc " + constant);       
     }
 
     public static String getJVMType(String type)
@@ -307,7 +311,7 @@ class JavaMMMain
                 break;
 
             case "TERM":
-                termToJVM(statement, funcName, false, true, null);
+                termToJVM(statement, funcName, false, true, null, false);
                 break;
 
             case "EQUALS":
@@ -327,7 +331,7 @@ class JavaMMMain
     {
         String endLabel = generateRandomLabel(funcName), elseLabel = generateRandomLabel(funcName);
 
-        expressionToJVM(ifNode.jjtGetChild(0), funcName, elseLabel);
+        expressionToJVM(ifNode.jjtGetChild(0), funcName, elseLabel, false);
 
         Node then = ifNode.jjtGetChild(1);
 
@@ -350,7 +354,7 @@ class JavaMMMain
         String conditionLabel = generateRandomLabel(funcName), endLabel = generateRandomLabel(funcName);
 
         jWriter.println("\n" + conditionLabel + ":");
-        expressionToJVM(whileNode.jjtGetChild(0), funcName, endLabel);
+        expressionToJVM(whileNode.jjtGetChild(0), funcName, endLabel, false);
 
         Node then = whileNode.jjtGetChild(1);
 
@@ -361,7 +365,7 @@ class JavaMMMain
         jWriter.println("\n" + endLabel + ":");
     }
 
-    public static void termToJVM(Node term, String funcName, boolean store, boolean loadClass, String conditionalLabel)
+    public static void termToJVM(Node term, String funcName, boolean store, boolean loadClass, String conditionalLabel, boolean not)
     {
         String termName = term.getName();
         String value = "";
@@ -406,7 +410,7 @@ class JavaMMMain
             return;
 
         Node termSon = term.jjtGetChild(0);
-        boolean noNewNorEnclosedExpr = false;
+        boolean noNewNorEnclosedExpr = false, newObject = false;
 
         switch(termSon.toString())
         {
@@ -414,7 +418,7 @@ class JavaMMMain
                 if(termSon.jjtGetNumChildren() != 0)
                 {
                     value = evaluatesTo(termSon.jjtGetChild(0), funcName);
-                    expressionToJVM(termSon.jjtGetChild(0), funcName, conditionalLabel);
+                    expressionToJVM(termSon.jjtGetChild(0), funcName, conditionalLabel, not);
                     break;
                 }
 
@@ -430,12 +434,14 @@ class JavaMMMain
                         jWriter.println(className + "/<init>()V");
                     else
                         jWriter.println(termSon.getType() + "/" + termSon.getType() + "()V");
+
+                    newObject = true;
                 }
                 else
                 {
                     value = "int[]";
 
-                    expressionToJVM(termSon.jjtGetChild(0).jjtGetChild(0), funcName, null);
+                    expressionToJVM(termSon.jjtGetChild(0).jjtGetChild(0), funcName, null, false);
                     jWriter.println("\tnewarray int");
                 }
 
@@ -450,14 +456,26 @@ class JavaMMMain
         if(term.jjtGetNumChildren() == 1)
         {
             if(!noNewNorEnclosedExpr)
+            {
+                /*
+                if(newObject)
+                    jWriter.println("\tpop"); */
+
                 return;
+            }
+                
             else
                 childIndex = 0;
         }
         else
         {
             if(noNewNorEnclosedExpr)
+            {
+                if(newObject)
+                    jWriter.println("\tpop");
+
                 return;
+            }
             else
                 childIndex = 1;
         }
@@ -467,10 +485,17 @@ class JavaMMMain
         switch(termSecondSon.toString())
         {
             case "ArrayAccs":
-                expressionToJVM(termSecondSon.jjtGetChild(0), funcName, null);
+                expressionToJVM(termSecondSon.jjtGetChild(0), funcName, null, false);
 
-                if(!store)
-                    jWriter.println("\tiaload");
+                if(!store) 
+                {
+                    if(term.jjtGetParent().toString().equals("EQUALS") && term.jjtGetParent().jjtGetChild(0) == term)
+                        break;
+                    else
+                        jWriter.println("\tiaload");
+                }
+                    
+
                 break;
 
             case "Member":
@@ -488,7 +513,15 @@ class JavaMMMain
                 if(termSecondSon.getName().equals("length"))
                     jWriter.println("\tarraylength");
                 else
+                {
                     functionCallToJVM(termSecondSon, funcName, value, staticMember);
+
+                    /*
+                    if(conditionalLabel != null)
+                        jWriter.println("\tifeq " + conditionalLabel); */
+                }
+                    
+                
 
                 break;
 
@@ -502,28 +535,41 @@ class JavaMMMain
     {
         String[] argTypes;
         boolean localFunc;
-        String returnType = "V";
+        String returnType;
 
-        if(caller.equals(className))
+        if(caller.equals(className) || caller.equals(extendingClass))
         {
-            SymbolTable funcTable = symbolTables.get(member.getName());
+            SymbolTable funcTable = symbolTables.get(member.getName() + "(" + member.jjtGetNumChildren() + ")");
 
-            argTypes = funcTable.getArgsList();
-            localFunc = true;
-            returnType = getJVMType(funcTable.getReturnType());
+            if(funcTable != null)
+            {
+                argTypes = funcTable.getArgsList();
+                localFunc = true;
+                returnType = getJVMType(funcTable.getReturnType());
+            }
+            else
+            {
+                if(caller.equals(className) && extendingClass != null)
+                    caller = extendingClass;
+
+                argTypes = new String[member.jjtGetNumChildren()];
+                localFunc = false;
+                returnType = getExpectedType(member, funcName);
+            }
         }
         else
         {
             argTypes = new String[member.jjtGetNumChildren()];
             localFunc = false;
+            returnType = getExpectedType(member, funcName);
         }
-
+       
         for(int i = 0; i < member.jjtGetNumChildren(); i++)
         {
             if(!localFunc)
                 argTypes[i] = evaluatesTo(member.jjtGetChild(i), funcName);
 
-            expressionToJVM(member.jjtGetChild(i), funcName, null);
+            expressionToJVM(member.jjtGetChild(i), funcName, null, false);
         }
 
         String cmd = "invoke";
@@ -538,42 +584,108 @@ class JavaMMMain
         for(int i = 0; i < argTypes.length; i++)
         {
             cmd += getJVMType(argTypes[i]);
-
-            if(i < argTypes.length - 1)
-                cmd += " ";
         }
             
 
         jWriter.print("\t" + cmd + ")" + returnType + "\n");
+
+        if(returnType.equals("I") || returnType.equals("Z") || returnType.equals("A"))
+            pop(member.jjtGetParent());
     }
 
-    public static void expressionToJVM(Node expression, String funcName, String conditionalLabel)
+    public static void pop(Node node)
+    {
+        switch(node.jjtGetParent().toString())
+        {
+            case "Then":
+            case "Else":
+            case "Method":
+            case "Main":
+                jWriter.println("\tpop");
+        }
+    }
+
+    public static String getExpectedType(Node member, String funcName)
+    {
+        Node memberParent; 
+        
+        if(member.toString().equals("ENCLOSED_EXPR"))
+            memberParent = member.jjtGetParent();
+        else
+            memberParent = member.jjtGetParent().jjtGetParent();
+
+        switch(memberParent.toString())
+        {
+            case "ENCLOSED_EXPR":
+                return getExpectedType(memberParent, funcName);
+
+            case "MUL":
+            case "DIV":
+            case "ADD":
+            case "SUB":
+            case "LOWER":
+            case "ArrayAccs":
+                return "I";
+
+            case "Member":
+                if(symbolTables.get(getFunctionName(memberParent)) != null)
+                    for(int i = 0; i < memberParent.jjtGetNumChildren(); i++)
+                    {
+                        if(memberParent.jjtGetChild(i) == member)
+                            return getJVMType(symbolTables.get(getFunctionName(memberParent)).getArgsList()[i]);   
+                    }      
+                else
+                    return "I"; //??
+
+            case "TERM":
+                    if(memberParent.jjtGetParent().toString().equals("EQUALS"))
+                        return getJVMType(evaluatesTo(memberParent.jjtGetParent().jjtGetChild(1), funcName));
+                    else 
+                        return "V";
+
+            case "EQUALS":
+                    return getJVMType(evaluatesTo(memberParent.jjtGetChild(0), funcName));
+
+            case "While":
+            case "If":
+            case "AND":
+                return "Z";
+
+            case "Return":
+                    return getJVMType(symbolTables.get(funcName).getReturnType());
+
+            default:
+                return "V";
+        }
+    }
+
+    public static void expressionToJVM(Node expression, String funcName, String conditionalLabel, boolean not)
     {
         String label1, label2;
 
         switch(expression.toString())
         {
             case "ADD":
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, false);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, false);
                 jWriter.println("\tiadd");
                 break;
 
             case "SUB":
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, false);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, false);
                 jWriter.println("\tisub");
                 break;
 
             case "DIV":
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, false);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, false);
                 jWriter.println("\tidiv");
                 break;
 
             case "MUL":
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, false);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, false);
                 jWriter.println("\timul");
                 break;
 
@@ -584,10 +696,19 @@ class JavaMMMain
                 else
                     label1 = generateRandomLabel(funcName); 
                 
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                jWriter.println("\tifeq " + label1);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
-                jWriter.println("\tifeq " + label1);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, not);
+
+                if(not)
+                    jWriter.println("\tifne " + label1);
+                else
+                    jWriter.println("\tifeq " + label1);
+
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, not);
+
+                if(not)
+                    jWriter.println("\tifne " + label1);
+                else
+                    jWriter.println("\tifeq " + label1);
 
                 if(conditionalLabel == null)
                 {
@@ -610,9 +731,13 @@ class JavaMMMain
                 else
                     label1 = generateRandomLabel(funcName);  
                 
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel);
-                jWriter.println("\tif_icmpge " + label1);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, not);
+                expressionToJVM(expression.jjtGetChild(1), funcName, conditionalLabel, not);
+
+                if(not)
+                    jWriter.println("\tif_icmplt " + label1);
+                else
+                    jWriter.println("\tif_icmpge " + label1);
 
                 if(conditionalLabel == null)
                 {
@@ -634,9 +759,20 @@ class JavaMMMain
                 else
                     label1 = generateRandomLabel(funcName);
 
-                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel);
-                jWriter.println("\tifne " + label1);
+                expressionToJVM(expression.jjtGetChild(0), funcName, conditionalLabel, true);
 
+                if(expression.jjtGetChild(0).toString().equals("TERM"))
+                {
+                    if(expression.jjtGetChild(0).jjtGetNumChildren() > 0 
+                        && expression.jjtGetChild(0).jjtGetChild(0).toString().equals("ENCLOSED_EXPR"))
+                    {
+                        if(expression.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0).jjtGetNumChildren() <= 1)
+                            jWriter.println("\tifne " + label1);  
+                    }
+                    else
+                        jWriter.println("\tifne " + label1);  
+                }
+                            
                 if(conditionalLabel == null)
                 {
                     label2 = generateRandomLabel(funcName);
@@ -651,7 +787,14 @@ class JavaMMMain
                 break;
 
             case "TERM":
-                termToJVM(expression, funcName, false, true, conditionalLabel);
+                
+                termToJVM(expression, funcName, false, true, conditionalLabel, not);
+
+                if(conditionalLabel != null && !not 
+                    && (expression.jjtGetParent().toString().equals("If") 
+                        || expression.jjtGetParent().toString().equals("While")))
+                    jWriter.println("\tifeq " + conditionalLabel);
+                
                 break;
 
             default:
@@ -672,14 +815,14 @@ class JavaMMMain
 
         if(lhs.jjtGetNumChildren() > 0 && lhs.jjtGetChild(0).toString().equals("ArrayAccs"))
         {
-            termToJVM(lhs, funcName, true, false, null);
-            expressionToJVM(expression, funcName, null);
+            termToJVM(lhs, funcName, false, false, null, false);
+            expressionToJVM(expression, funcName, null, false);
             jWriter.println("\tiastore");
         }
         else
         {
-            expressionToJVM(expression, funcName, null);
-            termToJVM(lhs, funcName, true, false, null);
+            expressionToJVM(expression, funcName, null, false);
+            termToJVM(lhs, funcName, true, false, null, false);
         }
             
         if(lhs.jjtGetNumChildren() > 0)
@@ -716,18 +859,9 @@ class JavaMMMain
 
     public static String generateRandomLabel(String funcName)
     {
-        String label;
-        Random rand = new Random();
+        label++;
 
-        do
-        {
-            label = funcName + Integer.toString(rand.nextInt(10000));
-        }
-        while(usedLabels.contains(label));
-
-        usedLabels.add(label);
-
-        return label;
+        return funcName + label;
     }
 
     public static void variableToJVM(Node identifier, String funcName, boolean store, boolean loadClass)
@@ -829,6 +963,8 @@ class JavaMMMain
 
     public static boolean analyseFunction(Node func)
     {
+        String funcName = getFunctionName(func);
+
         for(int i = 0; i < func.jjtGetNumChildren(); i++)
         {
             if(func.jjtGetChild(i).toString().equals("Var") || func.jjtGetChild(i).toString().equals("Arg"))
@@ -837,7 +973,7 @@ class JavaMMMain
             {
                 if(func.jjtGetChild(i).toString().equals("Return"))
                 {
-                    if(!isTheSameType(evaluatesTo(func.jjtGetChild(i).jjtGetChild(0), func.getName()), func.getReturnType()))
+                    if(!isTheSameType(evaluatesTo(func.jjtGetChild(i).jjtGetChild(0), funcName), func.getReturnType()))
                     {
                         System.out.println("Return value in function " + func.getName() + " does not meet function prototype");
                         return false;
@@ -848,7 +984,7 @@ class JavaMMMain
                 }
                 else
                 {
-                    if(!analyseStatement(func.jjtGetChild(i), func.getName()))
+                    if(!analyseStatement(func.jjtGetChild(i), funcName))
                     {
                         System.out.println("Error in function " + func.getName() + " statement(s)");
                         return false;
@@ -996,6 +1132,9 @@ class JavaMMMain
             return true;
         else
         {
+            if(extendingClass != null && op1Value.equals(extendingClass) && op2Value.equals(className))
+                return true;
+
             System.out.println("Equals operator types don't match in function "
                 + funcName + ": " + op1Value + " vs " + op2Value);
 
@@ -1228,7 +1367,8 @@ class JavaMMMain
     public static String analyseFunctionCall(Node member, String funcName, String callerType)
     {
         boolean ownFunc = callerType.equals(className);
-        SymbolTable funcST = symbolTables.get(member.getName());
+        String calledFuncName = member.getName() + "(" + member.jjtGetNumChildren() + ")";
+        SymbolTable funcST = symbolTables.get(calledFuncName);
 
         if(callerType.equals("int") || callerType.equals("boolean"))
         {
@@ -1243,7 +1383,10 @@ class JavaMMMain
         {
             if(ownFunc)
             {
-                System.out.println("Couldn't find class function " + member.getName() + " in function " + funcName);
+                if(extendingClass != null)
+                    return "all";
+                
+                System.out.println("Couldn't find class function " + calledFuncName + " in function " + funcName);
                 return "error";
             }
             else
@@ -1254,7 +1397,7 @@ class JavaMMMain
 
         if(argProtos.length != member.jjtGetNumChildren())
         {
-            System.out.println("Number of arguments mismatch in member call in fucntion " + funcName);
+            System.out.println("Number of arguments mismatch in member call in function " + funcName + ": Function has " + argProtos.length + " arguments");
             return "error";
         }
 
@@ -1262,7 +1405,7 @@ class JavaMMMain
         {
             if(!argProtos[i].equals(evaluatesTo(member.jjtGetChild(i), funcName)))
             {
-                System.out.println("Call to function " + member.getName() + " in function " + funcName
+                System.out.println("Call to function " + calledFuncName + " in function " + funcName
                 + " doesn't match function prototype");
                 return "error";
             }
@@ -1312,7 +1455,7 @@ class JavaMMMain
                     }
                     else
                     {
-                        System.out.println("Couldn't find class " + className + " symbol table in funtion" + funcName);
+                        System.out.println("Couldn't find class " + className + " symbol table in function" + funcName);
                         return "error";
                     }
                 }
@@ -1400,12 +1543,26 @@ class JavaMMMain
                                 builtSymbolTable = buildFunctionSymbolTable(child);
                                 break;
 
+                            case "Extends":
+                                extendingClass = child.getName();
+                                builtSymbolTable = true;
+                                break;
+
                             default:
                                 continue;
                         }
 
                         if(!builtSymbolTable)
+                        {
+                            String name = "";
+
+                            if(child.getName() != null)
+                                name = child.getName();
+
+                            System.out.println("Error in building symbol table for " + child.toString() + " " + name);
                             return false;
+                        }
+                            
                     }
 
                 }
@@ -1430,11 +1587,23 @@ class JavaMMMain
     public static boolean buildLocalSymbolTable(Node var, Node parentNode, boolean main, int index)
     {
         SymbolTable classST;
+        String name;
+        
+        if(parentNode.toString().equals("Class"))
+            name = className;
+        else
+            name  = getFunctionName(parentNode);
 
         if(!main)
-            classST = symbolTables.get(parentNode.getName());
+            classST = symbolTables.get(name);
         else
-            classST = symbolTables.get("main");
+            classST = symbolTables.get("main(1)");
+
+        if(classST == null)
+        {
+            System.out.println("Couldn't build local symbol table for " + name);
+            return false;
+        }
 
         Symbol newSymbol;
 
@@ -1450,9 +1619,9 @@ class JavaMMMain
             else
             {
                 if(main)
-                    symbolTables.put("main", classST);
+                    symbolTables.put("main(1)", classST);
                 else
-                    symbolTables.put(parentNode.getName(), classST);
+                    symbolTables.put(getFunctionName(parentNode), classST);
 
                 return true;
             }
@@ -1467,42 +1636,50 @@ class JavaMMMain
             else
             {
                 if(main)
-                    symbolTables.put("main", classST);
+                    symbolTables.put("main(1)", classST);
                 else
-                    symbolTables.put(parentNode.getName(), classST);
+                    symbolTables.put(getFunctionName(parentNode), classST);
 
                 return true;
             }
         }
+    }
 
+    public static String getFunctionName(Node function)
+    {
+        String funcName = function.getName() + "(";
+        int nArgs = 0;
 
+        if(function.getName().equals("main"))
+            return funcName + 1 + ")";
+
+        for(int i = 0; i < function.jjtGetNumChildren(); i++)
+            if(function.jjtGetChild(i).toString().equals("Arg"))
+                nArgs++;
+
+        return funcName + nArgs + ")";
     }
 
     public static boolean buildFunctionSymbolTable(Node func)
     {
-        SymbolTable funcTable = symbolTables.get(func.getName());
+        String funcName = getFunctionName(func);
+        SymbolTable funcTable = symbolTables.get(funcName);
 
         if(funcTable != null)
+        {
+            System.out.println("Duplicate function " + funcName);
             return false;
+        }
         else
             funcTable = new SymbolTable();
 
         funcTable.setReturnType(func.getReturnType());
-        symbolTables.put(func.getName(), funcTable);
+        symbolTables.put(funcName, funcTable);
 
-        int index;
-
-        if(func.jjtGetNumChildren() > 0 && 
-            (func.jjtGetChild(0).toString().equals("Arg") || func.jjtGetChild(0).toString().equals("Var"))
-            && !(func.jjtGetChild(0).getType().equals("int") ||  func.jjtGetChild(0).getType().equals("boolean")))
-            index = 1;
-        else
-            index = 0;
-
-        for(int i = 0; i < func.jjtGetNumChildren(); i++, index++)
+        for(int i = 0; i < func.jjtGetNumChildren(); i++)
         {
             if(func.jjtGetChild(i).toString().equals("Arg") || func.jjtGetChild(i).toString().equals("Var"))
-                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false, index))
+                if(!buildLocalSymbolTable(func.jjtGetChild(i), func, false, i + 1))
                     return false;
         }
 
@@ -1511,7 +1688,7 @@ class JavaMMMain
 
     public static boolean buildMainSymbolTable(Node main, int index)
     {
-        SymbolTable funcTable = symbolTables.get("main");
+        SymbolTable funcTable = symbolTables.get("main(1)");
 
         if(funcTable != null)
             return false;
@@ -1520,7 +1697,7 @@ class JavaMMMain
 
         funcTable.setReturnType("void");
         funcTable.putArg(new Symbol(main.getType(), "String[]", index)); //Type in main = argument identifier
-        symbolTables.put("main", funcTable);
+        symbolTables.put("main(1)", funcTable);
 
         for(int i = 0; i < main.jjtGetNumChildren(); i++)
         {
