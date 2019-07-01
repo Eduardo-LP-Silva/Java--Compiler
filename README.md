@@ -1,4 +1,4 @@
-#Compiler of the Java-- language to Java Bytecodes
+# Compiler of the Java-- language to Java Bytecodes
 
 ### SUMMARY 
 Our tool contains a parser for the Java-- language with syntatic and semantic error detection (and recovery). It begins by reading a jmm file and generating the respective AST, anotating the necessary information for the next stages in its nodes. The syntatic analysis is done at this time as well. 
