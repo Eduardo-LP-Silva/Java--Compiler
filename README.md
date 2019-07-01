@@ -1,31 +1,5 @@
 #Compiler of the Java-- language to Java Bytecodes
 
-##GROUP 21
-
-###Self Assessement
-
-*   * **NAME:** Eduardo Silva
-    * **NR:** up201603135 
-    * **GRADE:** 18 
-    * **CONTRIBUTION:** 50%
-    <br>
-*   * **NAME:** Tomás Novo
-    * **NR:** up201604503 
-    * **GRADE:** 15 
-    * **CONTRIBUTION:** 30%
-    <br>
-*   * **NAME:** Carolina Soares
-    * **NR:** up201606486 
-    * **GRADE:** 10
-    * **CONTRIBUTION:** 15%
-    <br>
-*   * **NAME:** Elgner Ramos
-    * **NR:** up201208090 
-    * **GRADE:*12* 
-    * **CONTRIBUTION:*15%*
-
-#### Global grade of the project: 16.5
-
 ### SUMMARY 
 Our tool contains a parser for the Java-- language with syntatic and semantic error detection (and recovery). It begins by reading a jmm file and generating the respective AST, anotating the necessary information for the next stages in its nodes. The syntatic analysis is done at this time as well. 
 The semantic analysis comes next (after generating the symbol tables necessary). If no errors are detected, it is generated jasmin code and saved in the output file specified. 
@@ -73,11 +47,6 @@ In order to generate the Jasmin code, the compiler iterates through the AST node
 The AST is built in accordance with the JJTree file containing the syntatic rules, using JavaCC and JavaC.
 The semantic analysis and code generation is done through the examination and evaluation of the different nodes and their relations to each other, while iterating over the tree in a depth-first like approach.
 This last stage generates machine code accepted by the Jasmin tool which in turn, when run, generates the class files necessary to run the code.
-
-### TASK DISTRIBUTION
-The initial JJTree file was done mainly by Eduardo and to some extent Tomás, with some help from Carolina and Elgner. The error recovery in this stage was accomplished by Eduardo and Tomás.
-The symbol tables and semantic analysis was done by Eduardo.
-The code generations was also done mainly by Eduardo and Tomás, with help from Carolina and Elgner.
 
 ### PROS
 
