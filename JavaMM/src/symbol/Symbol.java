@@ -7,11 +7,12 @@ public class Symbol
     private Boolean init = false;
     private int variableIndex;
 
-    public Symbol(String name, String type, int index)
+    public Symbol(String name, String type, int index, boolean init)
     {
         this.name = name;
         this.type = type;
         this.variableIndex = index;
+        this.init = init;
     }
 
     public String getName()

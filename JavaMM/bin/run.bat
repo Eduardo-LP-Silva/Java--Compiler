@@ -1,1 +1,1 @@
-java compiler.JavaMMMain files/Turing.jmm jasmin/Turing.j
+java compiler.Compiler files/Turing.jmm jasmin/Turing.j

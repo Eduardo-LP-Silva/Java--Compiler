@@ -1,3 +1,3 @@
-javac ast/*.java
+javac syntax/*.java
 javac compiler/*.java
 javac symbol/*.java
