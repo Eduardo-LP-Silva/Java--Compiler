@@ -1,11 +1,11 @@
 # Compiler of the Java-- language to Java Bytecodes
 
 ### SUMMARY 
-Our tool contains a parser for the Java-- language with syntatic and semantic error detection (and recovery). It begins by reading a jmm file and generating the respective AST, anotating the necessary information for the next stages in its nodes. The syntatic analysis is done at this time as well. 
+This tool contains a parser for the Java-- language with syntatic and semantic error detection (and recovery). It begins by reading a jmm file and generating the respective AST, anotating the necessary information for the next stages in its nodes. The syntatic analysis is done at this time as well. 
 The semantic analysis comes next (after generating the symbol tables necessary). If no errors are detected, it is generated jasmin code and saved in the output file specified. 
 
 ### EXECUTION
-There are to ways to execute our tool:
+There are two ways to execute the application:
 
 * Through the .jar file: java -jar JavaMM.jar <input_file> <output_file>
 * Through the project, from the /src folder: java compiler.JavaMMMain <input_file> <output_file>
